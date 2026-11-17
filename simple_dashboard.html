@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quant Monitor</title>
+  <link rel="icon" type="image/x-icon" href="bank.ico">
+  <link rel="stylesheet" href="vue_quant_demo.css">
+  <script src="components/vendor/vue.global.prod.js"></script>
+  <script src="components/draggable_train_chart/plotly.min.js"></script>
+</head>
+<body>
+  <div id="app" v-cloak>
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Quant Monitor</h1>
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button type="button" class="refresh-button" :class="{ spinning: loadingPairs }" @click="loadPairs(true)" :disabled="loadingPairs">
+          {{ loadingPairs ? "Refreshing" : "Refresh" }}
+        </button>
+        <span>{{ pairs.length }} symbols</span>
+      </div>
+
+      <div class="pair-list">
+        <button
+          type="button"
+          class="pair-button home-button"
+          :class="{ active: currentView === 'home' }"
+          @click="showHome"
+        >
+          <span>Home</span>
+        </button>
+        <button
+          v-for="item in pairs"
+          :key="item.name"
+          type="button"
+          class="pair-button"
+          :class="{ active: currentView === 'detail' && selectedName === item.name }"
+          @click="selectPair(item.name)"
+        >
+          <span>{{ displayName(item) }}</span>
+          <small>{{ item.kind || "pair" }}</small>
+        </button>
+      </div>
+    </aside>
+
+    <main v-if="currentView === 'home'" class="content">
+      <section class="panel calendar-panel">
+        <div class="panel-header">
+          <div>
+            <h3>US Market Calendar <span class="calendar-year">{{ calendarYear }}</span></h3>
+          </div>
+        </div>
+
+        <div v-if="calendarError" class="empty-state">{{ calendarError }}</div>
+        <div v-else class="calendar-grid">
+          <article v-for="(session, index) in marketCalendar.sessions" :key="session.open_ny" class="calendar-card">
+            <span>{{ formatCalendarLine(session, index) }}</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel waiting-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Waiting Entry</h3>
+            <p>Auto-refreshing from <code>/api/waiting-entry</code></p>
+          </div>
+          <div class="live-indicator" :class="{ stale: waitingError || !waitingLive }">
+            <span></span>
+            {{ waitingLive ? "Live" : "Unlive" }}
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Lock</th>
+              <th>Strategy</th>
+              <th>Signal</th>
+              <th>Price</th>
+              <th>Rolling Mean</th>
+              <th>Entry</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="waitingItems.length === 0">
+              <td colspan="8">No waiting entry rows returned.</td>
+            </tr>
+            <tr v-for="item in waitingItems" :key="item.name + item.kind" :class="['waiting-row', item.signal_state]">
+              <td>{{ item.name }}</td>
+              <td>{{ item.lock }}</td>
+              <td>{{ formatStrategy(item.strategy) }}</td>
+              <td><span class="signal-badge" :class="item.signal_state">{{ item.signal_label || "-" }}</span></td>
+              <td>{{ formatWaitingPrice(item) }}</td>
+              <td>{{ formatNumber(item.rolling_mean, 5) }}</td>
+              <td>{{ formatEntry(item) }}</td>
+              <td>{{ item.updated_at || "-" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel waiting-panel flagship-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Flagship Holdings</h3>
+            <p>{{ flagshipStatusText }}</p>
+          </div>
+          <div class="flagship-header-actions">
+            <button
+              v-if="hiddenFlagshipCount > 0"
+              type="button"
+              class="hidden-toggle"
+              @click="showHiddenFlagship = !showHiddenFlagship"
+            >
+              {{ showHiddenFlagship ? "Hide Hidden" : `Show Hidden (${hiddenFlagshipCount})` }}
+            </button>
+            <div class="live-indicator" :class="{ stale: flagshipError || !flagshipLive }">
+              <span></span>
+              {{ flagshipLive ? "Live" : "Unlive" }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="flagshipAccount && Object.keys(flagshipAccount).length" class="flagship-account">
+          <span>NetLiq {{ formatCurrency(flagshipAccount.net_liq, 0) }}</span>
+          <span>Available {{ formatCurrency(flagshipAccount.available, 0) }}</span>
+          <span>Unreal {{ formatCurrency(flagshipAccount.unrealized_pnl, 2) }}</span>
+          <span>Exposure {{ formatNumber(flagshipAccount.exposure_pct, 1) }}%</span>
+        </div>
+
+        <div v-if="visibleFlagshipItems.length === 0" class="empty-state">
+          {{ flagshipItems.length === 0 ? "No flagship holdings returned." : "All flagship holdings are hidden." }}
+        </div>
+        <div v-else class="flagship-grid">
+          <article v-for="item in visibleFlagshipItems" :key="item.hidden_key || (item.kind + item.name)" :class="['position-card', returnState(item), { hidden: item.hidden }]">
+            <header>
+              <div>
+                <strong>{{ item.name }}</strong>
+                <span>{{ cardSubtitle(item) }}</span>
+              </div>
+              <div class="position-card-actions">
+                <span>{{ item.hidden ? "HIDDEN" : formatCardBadge(item) }}</span>
+                <button
+                  type="button"
+                  @click="setFlagshipHidden(item, !item.hidden)"
+                  :disabled="hiddenSavingKey === flagshipKey(item)"
+                >
+                  {{ item.hidden ? "Show" : "Hide" }}
+                </button>
+              </div>
+            </header>
+
+            <div v-if="item.kind === 'pair'" class="position-legs">
+              <div class="leg-head">
+                <span>Leg</span>
+                <span>Pos</span>
+                <span>Price</span>
+                <span>Change</span>
+                <span>PnL</span>
+              </div>
+              <div>
+                <span>{{ item.y }}</span>
+                <span>{{ formatSigned(item.qty_y, 0) }}</span>
+                <span>{{ formatNumber(item.price_y, 2) }}</span>
+                <span :class="['change-cell', moneyClass(item.pnl_y, item)]">{{ formatChange(item.price_y, item.avg_y, 2) }}</span>
+                <span :class="moneyClass(item.pnl_y, item)">{{ formatSignedCurrency(item.pnl_y, 2) }}</span>
+              </div>
+              <div>
+                <span>{{ item.x }}</span>
+                <span>{{ formatSigned(item.qty_x, 0) }}</span>
+                <span>{{ formatNumber(item.price_x, 2) }}</span>
+                <span :class="['change-cell', moneyClass(item.pnl_x, item)]">{{ formatChange(item.price_x, item.avg_x, 2) }}</span>
+                <span :class="moneyClass(item.pnl_x, item)">{{ formatSignedCurrency(item.pnl_x, 2) }}</span>
+              </div>
+            </div>
+
+            <div v-else class="position-legs">
+              <div class="leg-head">
+                <span>Symbol</span>
+                <span>Pos</span>
+                <span>Price</span>
+                <span>Change</span>
+                <span>PnL</span>
+              </div>
+              <div>
+                <span>{{ item.symbol }}</span>
+                <span>{{ formatSigned(item.qty, 0) }}</span>
+                <span>{{ formatNumber(item.price, 2) }}</span>
+                <span :class="['change-cell', moneyClass(item.pnl, item)]">{{ formatChange(item.price, item.avg_price, 2) }}</span>
+                <span :class="moneyClass(item.pnl, item)">{{ formatSignedCurrency(item.pnl, 2) }}</span>
+              </div>
+            </div>
+
+            <footer>
+              <template v-if="item.kind === 'pair'">
+                <div class="pair-total-footer">
+                  <span>z {{ formatSigned(item.z_now, 2) }} <small>entry {{ formatSigned(item.z_entry, 2) }}</small></span>
+                  <span></span>
+                  <span></span>
+                  <span :class="moneyClass(item.return_pct, item)">{{ formatPercent(item.return_pct) }}</span>
+                  <span :class="moneyClass(item.total, item)">{{ formatSignedCurrency(item.total, 2) }}</span>
+                </div>
+              </template>
+              <template v-else>
+                <span>notional {{ formatCurrency(item.current_notional, 0) }}</span>
+                <span :class="moneyClass(item.return_pct, item)">{{ formatPercent(item.return_pct) }}</span>
+              </template>
+            </footer>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <main v-else class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Live Operations</p>
+          <h2>{{ selectedName ? selectedName.toUpperCase().replaceAll("_", " / ") : "No pair selected" }}</h2>
+        </div>
+        <div class="status-pill" :class="{ stale: error }">
+          {{ error || statusText }}
+        </div>
+      </header>
+
+      <section class="metrics">
+        <article class="metric">
+          <span>{{ isSingle ? "Stock" : (current.calculation === "fixed_beta_rolling" ? "Fixed Beta" : "Beta") }}</span>
+          <strong>{{ isSingle ? (current.symbol || selectedName || "-").toUpperCase() : formatNumber(current.beta, 4) }}</strong>
+        </article>
+        <article class="metric">
+          <span>{{ isSingle ? "Return" : (current.calculation === "fixed_beta_rolling" ? "Rolling Z-score" : "Z-score") }}</span>
+          <strong :class="zClass">{{ isSingle ? formatPercent(lastBar.return_pct) : formatNumber(lastBar.zscore, 3) }}</strong>
+        </article>
+        <article class="metric">
+          <span>{{ isSingle ? "Price" : "Spread" }}</span>
+          <strong>{{ isSingle ? formatNumber(lastBar.price, 2) : formatNumber(lastBar.spread, 3) }}</strong>
+        </article>
+        <article class="metric">
+          <span>Time</span>
+          <strong>{{ shortTime(lastBar.time) }}</strong>
+        </article>
+      </section>
+
+      <section class="spread-workspace">
+        <div v-if="!isSingle" class="pair-chart-stack">
+          <section class="panel chart-panel spread-chart-panel">
+            <div class="panel-header">
+              <div>
+                <h3>Fixed-beta Spread</h3>
+                <p>5m spread · daily-close 20D rolling mean and ±2 Sigma band</p>
+              </div>
+              <button type="button" class="refresh-button" :class="{ spinning: loadingPair }" @click="loadSelected(true)" :disabled="loadingPair">
+                {{ loadingPair ? "Loading" : "Reload" }}
+              </button>
+            </div>
+            <div id="spreadChart"></div>
+          </section>
+          <section class="panel chart-panel kappa-chart-panel">
+            <div class="panel-header compact">
+              <div>
+                <h3>Kappa hat</h3>
+                <p>Rolling 20D estimate · daily equivalent</p>
+              </div>
+            </div>
+            <div id="kappaChart"></div>
+          </section>
+        </div>
+        <section v-else class="panel chart-panel spread-chart-panel">
+          <div class="panel-header">
+            <div>
+              <h3>Price Curve</h3>
+              <p>{{ current.train_start || "-" }} to {{ current.test_end || "-" }}</p>
+            </div>
+            <button type="button" class="refresh-button" :class="{ spinning: loadingPair }" @click="loadSelected(true)" :disabled="loadingPair">
+              {{ loadingPair ? "Loading" : "Reload" }}
+            </button>
+          </div>
+          <div id="singlePriceChart"></div>
+        </section>
+
+        <div class="panel details-panel">
+          <div class="panel-header compact">
+            <h3>{{ isSingle ? "Single Snapshot" : "Pair Snapshot" }}</h3>
+          </div>
+          <dl>
+            <div v-if="!isSingle">
+              <dt>Y leg</dt>
+              <dd>{{ current.y_label || "-" }}</dd>
+            </div>
+            <div v-if="!isSingle">
+              <dt>X leg</dt>
+              <dd>{{ current.x_label || "-" }}</dd>
+            </div>
+            <div>
+              <dt>{{ isSingle ? "Symbol" : (current.calculation === "fixed_beta_rolling" ? "Rolling mean" : "Alpha") }}</dt>
+              <dd>{{ isSingle ? (current.symbol || selectedName || "-").toUpperCase() : formatNumber(current.calculation === "fixed_beta_rolling" ? current.rolling_mean : current.alpha, 5) }}</dd>
+            </div>
+            <div>
+              <dt>{{ isSingle ? "Exposure" : (current.calculation === "fixed_beta_rolling" ? "Rolling Sigma Return" : "2 Sigma Return") }}</dt>
+              <dd>{{ isSingle ? formatPercent(current.exposure_pct) : (current.calculation === "fixed_beta_rolling" ? formatRollingSigmaReturn(current) : formatTwoSigmaReturn(current)) }}</dd>
+            </div>
+            <div>
+              <dt>{{ current.calculation === "fixed_beta_rolling" ? "Kappa hat (Daily Equivalent)" : "Split" }}</dt>
+              <dd>{{ current.calculation === "fixed_beta_rolling" ? formatNumber(current.kappa_hat_daily_equivalent, 5) : (current.split || "-") }}</dd>
+            </div>
+            <div>
+              <dt>Source</dt>
+              <dd>{{ formatSource(selectedMeta.source) }}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="panel orders-panel">
+        <div class="panel-header">
+          <div>
+            <h3>Trade History</h3>
+            <p>From <code>{{ isSingle ? "single_scheduled_orders" : "scheduled_orders" }}</code></p>
+          </div>
+          <button type="button" class="refresh-button" :class="{ spinning: loadingTradeHistory }" @click="loadTradeHistory" :disabled="loadingTradeHistory">
+            {{ loadingTradeHistory ? "Loading" : "Refresh" }}
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>{{ isSingle ? "Stock" : "Pair" }}</th>
+              <th>Type</th>
+              <th>{{ isSingle ? "Param" : "2 Sigma" }}</th>
+              <th>Exposure</th>
+              <th>Status</th>
+              <th>Result</th>
+              <th>Max Return</th>
+              <th>Created</th>
+              <th>Closed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="tradeHistory.length === 0">
+              <td colspan="10">No trade history returned.</td>
+            </tr>
+            <tr
+              v-for="order in tradeHistory"
+              :key="`${order.status}-${order.id}`"
+              class="history-row"
+              :class="{ selected: selectedTradeHistoryId === order.id }"
+              @click="selectTradeHistory(order)"
+            >
+              <td>{{ order.id }}</td>
+              <td>{{ isSingle ? order.single_name : formatPairName(order.pair_name) }}</td>
+              <td>{{ formatPositionType(order.position_type) }}</td>
+              <td>{{ isSingle ? formatNumber(order.param, 5) : formatPercent(order.two_sigma) }}</td>
+              <td>{{ formatPercent(order.exposure_pct) }}</td>
+              <td><span class="order-status" :class="statusClass(order.status)">{{ order.status || "-" }}</span></td>
+              <td :class="resultClass(order.result)">{{ formatSigned(order.result, 2) }}</td>
+              <td>{{ formatSigned(order.max_return, 2) }}</td>
+              <td>{{ shortDateTime(order.created_at) }}</td>
+              <td>{{ shortDateTime(order.close_time) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const { createApp, nextTick } = Vue
+    const PUBLIC_READ_ONLY_PREFIX = "/finance/quant/"
+    const API_BASE = window.location.protocol === "file:"
+      ? "http://127.0.0.1:8000"
+      : (window.location.pathname.startsWith(PUBLIC_READ_ONLY_PREFIX) ? "/finance/quant" : "")
+
+    function buildDemoSeries() {
+      const points = 180
+      const index = []
+      const time = []
+      const zscore = []
+      const spread = []
+      const priceX = []
+      const priceY = []
+
+      for (let i = 0; i < points; i += 1) {
+        const wave = Math.sin(i / 13) * 1.15 + Math.cos(i / 31) * 0.55
+        const drift = (i - points * 0.55) / 210
+        const z = wave + drift
+        index.push(i)
+        time.push(`2026-05-${String(10 + Math.floor(i / 79)).padStart(2, "0")} ${String(9 + Math.floor((i % 79) / 12)).padStart(2, "0")}:${String((i % 12) * 5).padStart(2, "0")}:00`)
+        zscore.push(z)
+        spread.push(1.8 + z * 0.42)
+        priceX.push(188 + Math.sin(i / 17) * 2.4 + i * 0.015)
+        priceY.push(122 + Math.cos(i / 19) * 1.9 + i * 0.012)
+      }
+
+      const last = points - 1
+      return {
+        kind: "pair",
+        source: "DEMO",
+        train_start: "2026-01-02",
+        split: time[96],
+        test_end: time[last],
+        index,
+        time,
+        zscore,
+        spread,
+        priceX,
+        priceY,
+        x_label: "MSFT",
+        y_label: "AAPL",
+        alpha: 3.2185,
+        beta: 0.6342,
+        mu: 1.8,
+        sigma: 0.42,
+        last_bar: {
+          time: time[last],
+          zscore: zscore[last],
+          spread: spread[last],
+          priceX: priceX[last],
+          priceY: priceY[last]
+        }
+      }
+    }
+
+    const DEMO_PAIRS = [
+      { name: "aapl_msft", kind: "pair", source: "DEMO", train_start: "2026-01-02", split: "2026-05-11 10:25:00" },
+      { name: "xom_cvx", kind: "pair", source: "DEMO", train_start: "2026-02-03", split: "2026-05-11 11:10:00" },
+      { name: "spy", kind: "single", source: "DEMO", train_start: "2026-01-15", split: "2026-05-12 09:45:00" }
+    ]
+
+    const DEMO_PAIR_TRADE_HISTORY = [
+      { id: 101, pair_name: "aapl_msft", position_type: "LONG_SPREAD", two_sigma: 1.42, exposure_pct: 18, status: "CLOSED", result: 2.36, max_return: 3.12, created_at: "2026-05-12 21:31:00", close_time: "2026-05-14 03:55:00" },
+      { id: 98, pair_name: "aapl_msft", position_type: "SHORT_SPREAD", two_sigma: 1.39, exposure_pct: 18, status: "CLOSED", result: -0.74, max_return: 0.88, created_at: "2026-05-09 22:04:00", close_time: "2026-05-10 04:12:00" }
+    ]
+
+    const DEMO_SINGLE_TRADE_HISTORY = [
+      { id: 77, single_name: "SPY", strategy: "LOG_RESIDUAL", param: 0.08, position_type: "LONG_SPREAD", exposure_pct: 12, status: "CLOSED", result: 1.18, max_return: 1.72, created_at: "2026-05-13 21:40:00", close_time: "2026-05-15 02:10:00" },
+      { id: 72, single_name: "SPY", strategy: "LOG_RESIDUAL", param: -0.08, position_type: "SHORT_SPREAD", exposure_pct: 12, status: "CLOSED", result: -0.42, max_return: 0.36, created_at: "2026-05-08 22:05:00", close_time: "2026-05-09 03:20:00" }
+    ]
+
+    const DEMO_WAITING_ENTRY = {
+      ok: true,
+      count: 3,
+      live_count: 3,
+      trigger_count: 1,
+      locked_count: 1,
+      updated_at: "2026-06-02 21:30:00",
+      last_event: "demo snapshot",
+      items: [
+        { name: "AAPL / MSFT", kind: "pair", strategy: "PAIR", lock: 0, signal_label: "+1.842", signal_state: "ok", price: null, rolling_mean: 12.34567, entry: 2, bars: "-", updated_at: "2026-06-02 21:30:00" },
+        { name: "SPY", kind: "single_log_residual", strategy: "LOG_RESIDUAL", lock: 0, signal_label: "+0.08421", signal_state: "trigger", price: 592.14, rolling_mean: -0.01234, entry: 0.08, bars: 78, updated_at: "2026-06-02 21:30:00" },
+        { name: "PLTR", kind: "single_new_high", strategy: "NEW_HIGH", lock: 1, signal_label: "waiting", signal_state: "ok", price: 126.42, rolling_mean: null, entry: 128.2, bars: 0, updated_at: "2026-06-02 21:30:00" }
+      ]
+    }
+
+    createApp({
+      data() {
+        return {
+          currentView: "home",
+          pairs: [],
+          selectedName: "",
+          current: {},
+          tradeHistory: [],
+          selectedTradeHistoryId: null,
+          selectedTradeHistoryItem: null,
+          marketCalendar: { sessions: [], closed_days: [], session_count: 0, source: "" },
+          waitingSummary: { count: 0, live_count: 0, trigger_count: 0, locked_count: 0, updated_at: "" },
+          waitingItems: [],
+          flagshipItems: [],
+          flagshipAccount: {},
+          showHiddenFlagship: false,
+          hiddenSavingKey: "",
+          loadingPairs: false,
+          loadingPair: false,
+          loadingTradeHistory: false,
+          loadingWaiting: false,
+          error: "",
+          calendarError: "",
+          waitingError: "",
+          waitingLive: false,
+          flagshipError: "",
+          flagshipLive: false,
+          statusText: "Ready",
+          waitingStatusText: "Ready",
+          flagshipStatusText: "flagship offline",
+          demoMode: false,
+          waitingTimer: null,
+          detailPayloadCache: {},
+          detailLoadVersion: 0,
+          chartRenderVersion: 0
+        }
+      },
+      computed: {
+        selectedMeta() {
+          return this.pairs.find(item => item.name === this.selectedName) || {}
+        },
+        isSingle() {
+          return this.current.kind === "single" ||
+            this.selectedMeta.kind === "single" ||
+            (!!this.current.symbol && !this.current.zscore)
+        },
+          lastBar() {
+          return this.current.last_bar || {}
+        },
+        calendarYear() {
+          const first = (this.marketCalendar.sessions || [])[0]
+          return first && first.open_bj_text ? String(first.open_bj_text).slice(0, 4) : ""
+        },
+        hiddenFlagshipCount() {
+          return (this.flagshipItems || []).filter(item => item.hidden).length
+        },
+        visibleFlagshipItems() {
+          const items = this.flagshipItems || []
+          return this.showHiddenFlagship ? items : items.filter(item => !item.hidden)
+        },
+        zClass() {
+          if (this.isSingle) {
+            const ret = Number(this.lastBar.return_pct)
+            if (!Number.isFinite(ret)) return ""
+            return ret >= 0 ? "good" : "danger"
+          }
+          const z = Number(this.lastBar.zscore)
+          if (!Number.isFinite(z)) return ""
+          if (Math.abs(z) <= 0.5) return "good"
+          if (Math.abs(z) < 1.9) return "warn"
+          return "danger"
+        }
+      },
+      mounted() {
+        this.loadPairs(false)
+        this.loadHomeSnapshots(true)
+        this.waitingTimer = window.setInterval(() => {
+          if (this.currentView === "home" && document.visibilityState !== "hidden" && this.marketIsOpen()) {
+            this.loadHomeSnapshots(false)
+          }
+        }, 3000)
+      },
+      beforeUnmount() {
+        if (this.waitingTimer) {
+          window.clearInterval(this.waitingTimer)
+        }
+      },
+      methods: {
+        showHome() {
+          this.currentView = "home"
+          this.loadHomeSnapshots(true)
+        },
+        displayName(item) {
+          return String(item.name || "").toUpperCase().replaceAll("_", " / ")
+        },
+        formatNumber(value, digits) {
+          if (value === null || value === undefined || value === "") return "-"
+          const number = Number(value)
+          return Number.isFinite(number) ? number.toFixed(digits) : "-"
+        },
+        formatPercent(value) {
+          if (value === null || value === undefined || value === "") return "-"
+          const number = Number(value)
+          return Number.isFinite(number) ? `${number.toFixed(2)}%` : "-"
+        },
+        formatTwoSigmaReturn(item) {
+          if (!item) return "-"
+          const sigma = Number(item.sigma)
+          const beta = Number(item.beta)
+          const last = item.last_bar || {}
+          const priceY = Number(last.priceY)
+          const priceX = Number(last.priceX)
+          const capital = Math.abs(priceY) + Math.abs(beta * priceX)
+
+          if (!Number.isFinite(sigma) || !Number.isFinite(beta) || !Number.isFinite(capital) || capital === 0) {
+            return "-"
+          }
+
+          return `${((2 * sigma) / capital * 100).toFixed(2)}%`
+        },
+        formatRollingSigmaReturn(item) {
+          if (!item) return "-"
+          const sigma = Number(item.rolling_sigma)
+          const beta = Number(item.fixed_beta ?? item.beta)
+          const last = item.last_bar || {}
+          const priceY = Number(last.priceY)
+          const priceX = Number(last.priceX)
+          const capital = Math.abs(priceY) + Math.abs(beta * priceX)
+
+          if (!Number.isFinite(sigma) || !Number.isFinite(beta) || !Number.isFinite(capital) || capital === 0) {
+            return "-"
+          }
+
+          return `${(sigma / capital * 100).toFixed(2)}%`
+        },
+        formatCurrency(value, digits) {
+          if (value === null || value === undefined || value === "") return "-"
+          const number = Number(value)
+          if (!Number.isFinite(number)) return "-"
+          return `$${number.toLocaleString(undefined, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+          })}`
+        },
+        formatSignedCurrency(value, digits) {
+          if (value === null || value === undefined || value === "") return "-"
+          const number = Number(value)
+          if (!Number.isFinite(number)) return "-"
+          const sign = number > 0 ? "+" : number < 0 ? "-" : ""
+          return `${sign}$${Math.abs(number).toLocaleString(undefined, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+          })}`
+        },
+        formatSigned(value, digits) {
+          if (value === null || value === undefined || value === "") return "-"
+          const number = Number(value)
+          if (!Number.isFinite(number)) return "-"
+          return `${number >= 0 ? "+" : ""}${number.toFixed(digits)}`
+        },
+        formatChange(price, avg, digits) {
+          if (price === null || price === undefined || price === "" || avg === null || avg === undefined || avg === "") return "-"
+          const change = Number(price) - Number(avg)
+          if (!Number.isFinite(change)) return "-"
+          const icon = change >= 0 ? "📈" : "📉"
+          return `${icon} ${change >= 0 ? "+" : ""}${change.toFixed(digits)}`
+        },
+        formatEntry(item) {
+          if (item.kind === "single_log_residual") return this.formatSigned(item.entry, 5)
+          return this.formatNumber(item.entry, 2)
+        },
+        formatWaitingPrice(item) {
+          if (item.kind === "pair") {
+            const yPrice = this.formatNumber(item.price_y, 2)
+            const xPrice = this.formatNumber(item.price_x, 2)
+            if (yPrice === "-" && xPrice === "-") return "-"
+            return `Y ${yPrice} / X ${xPrice}`
+          }
+          return this.formatNumber(item.price, 2)
+        },
+        formatStrategy(value) {
+          const text = String(value || "").toUpperCase()
+          if (text === "LOG_RESIDUAL") return "Log Residual"
+          if (text === "NEW_HIGH") return "New High"
+          return text || "-"
+        },
+        formatPairName(value) {
+          const text = String(value || "").trim()
+          return text ? text.toUpperCase().replaceAll("_", " / ") : "-"
+        },
+        formatSource(value) {
+          const text = String(value || "").trim()
+          if (!text) return "-"
+          return text
+            .replaceAll("SINGLE_", "")
+            .replaceAll("single_", "")
+            .toLowerCase()
+            .split("+")
+            .filter(Boolean)
+            .join("+")
+        },
+        formatPositionType(value) {
+          const text = String(value || "").toUpperCase()
+          if (text.includes("LONG")) return "Long 📈"
+          if (text.includes("SHORT")) return "Short 📉"
+          return text || "-"
+        },
+        formatCalendarLine(session, index) {
+          const openText = String(session.open_bj_text || "")
+          const closeText = String(session.close_bj_text || "")
+          const openDate = openText.slice(5, 10)
+          const closeDate = closeText.slice(5, 10)
+          const openTime = openText.slice(11, 16)
+          const closeTime = closeText.slice(11, 16)
+          return `BJ Time ${openDate}🌆 ${openTime} - ${closeDate}🌄 ${closeTime}`
+        },
+        tradingDateFromBjTime(value) {
+          if (!value) return ""
+
+          const date = new Date(String(value).replace(" ", "T"))
+          if (Number.isNaN(date.getTime())) {
+            return String(value).slice(0, 10)
+          }
+
+          date.setHours(date.getHours() - 12)
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, "0")
+          const day = String(date.getDate()).padStart(2, "0")
+          return `${year}-${month}-${day}`
+        },
+        buildTradingAxis(time, maxLabels = 12) {
+          const values = Array.isArray(time) ? time : []
+          const totalBars = values.length
+          const plotX = values.map((_, index) => index)
+          const tickvals = []
+          const ticktext = []
+          const daySpans = []
+          let currentDate = null
+
+          values.forEach((item, index) => {
+            const tradeDate = this.tradingDateFromBjTime(item)
+            if (tradeDate !== currentDate) {
+              if (daySpans.length > 0) {
+                daySpans[daySpans.length - 1].end = index - 1
+              }
+              daySpans.push({ date: tradeDate, start: index, end: index })
+              currentDate = tradeDate
+            } else if (daySpans.length > 0) {
+              daySpans[daySpans.length - 1].end = index
+            }
+          })
+
+          if (daySpans.length > 0) {
+            const step = Math.max(1, Math.ceil(daySpans.length / maxLabels))
+            daySpans.forEach((span, index) => {
+              if (index % step === 0) {
+                tickvals.push(span.start)
+                ticktext.push(`Day ${index}`)
+              }
+            })
+            const lastSpan = daySpans[daySpans.length - 1]
+            if (tickvals[tickvals.length - 1] !== lastSpan.start) {
+              tickvals.push(lastSpan.start)
+              ticktext.push(`Day ${daySpans.length - 1}`)
+            }
+          }
+
+          return { plotX, tickvals, ticktext }
+        },
+        formatFlagshipPosition(item) {
+          if (item.kind === "pair") {
+            const yQty = this.formatSigned(item.qty_y, 0)
+            const xQty = this.formatSigned(item.qty_x, 0)
+            if (yQty === "-" && xQty === "-") return "-"
+            return `${item.y || "Y"} ${yQty} / ${item.x || "X"} ${xQty}`
+          }
+          if (item.qty === null || item.qty === undefined) return "-"
+          return `${item.side || ""} ${this.formatSigned(item.qty, 0)}`.trim()
+        },
+        formatFlagshipPrice(item) {
+          if (item.kind === "pair") {
+            const yPrice = this.formatNumber(item.price_y, 2)
+            const xPrice = this.formatNumber(item.price_x, 2)
+            if (yPrice === "-" && xPrice === "-") return "-"
+            return `${item.y || "Y"} ${yPrice} / ${item.x || "X"} ${xPrice}`
+          }
+          return this.formatNumber(item.price, 2)
+        },
+        returnState(item) {
+          const value = Number(item.return_pct)
+          if (!Number.isFinite(value)) return "neutral"
+          if (value >= 0) return "positive"
+          if (item && item.kind === "single") {
+            if (value > -0.8) return "caution"
+            if (value > -2.0) return "warning"
+            return "negative"
+          }
+          if (value >= -0.4) return "caution"
+          if (value >= -0.8) return "warning"
+          return "negative"
+        },
+        cardSubtitle(item) {
+          if (item.kind === "pair") return `beta ${this.formatNumber(item.beta, 2)}`
+          const avg = this.formatNumber(item.avg_price, 2)
+          return `${item.side || "SINGLE"} | avg ${avg}`
+        },
+        formatCardBadge(item) {
+          const exposure = this.formatNumber(item.exposure_pct, 1)
+          if (exposure !== "-") return `${exposure}%`
+          return item.kind === "pair" ? "PAIR" : "SINGLE"
+        },
+        moneyClass(value, item) {
+          if (value === null || value === undefined || value === "") return ""
+          const state = item ? this.returnState(item) : "neutral"
+          if (state === "positive") return "money-positive"
+          if (state === "caution") return "money-caution"
+          if (state === "warning") return "money-warning"
+          if (state === "negative") return "money-negative"
+          return ""
+        },
+        resultClass(value) {
+          const number = Number(value)
+          if (!Number.isFinite(number) || number === 0) return ""
+          return number > 0 ? "money-positive" : "money-negative"
+        },
+        statusClass(value) {
+          const status = String(value || "").trim().toLowerCase()
+          if (status === "pending") return "pending"
+          if (status === "holding") return "holding"
+          if (status === "closed") return "closed"
+          return "muted"
+        },
+        selectTradeHistory(order) {
+          this.selectedTradeHistoryId = order ? order.id : null
+          this.selectedTradeHistoryItem = order || null
+          this.renderChart()
+        },
+        timeIndexForTrade(timeValues, value) {
+          if (!value || !Array.isArray(timeValues) || timeValues.length === 0) return -1
+          const target = new Date(String(value).replace(" ", "T")).getTime()
+          if (!Number.isFinite(target)) return -1
+
+          let bestIndex = -1
+          let bestDelta = Infinity
+          timeValues.forEach((item, index) => {
+            const current = new Date(String(item).replace(" ", "T")).getTime()
+            if (!Number.isFinite(current)) return
+            const delta = Math.abs(current - target)
+            if (delta < bestDelta) {
+              bestDelta = delta
+              bestIndex = index
+            }
+          })
+
+          if (bestDelta > 72 * 60 * 60 * 1000) return -1
+          return bestIndex
+        },
+        tradeHistoryShapes(timeValues) {
+          const order = this.selectedTradeHistoryItem
+          if (!order) return []
+
+          const markers = [
+            { value: order.created_at, color: "#f5c542", label: "Entry" },
+            { value: order.close_time, color: "#33d17a", label: "Exit" }
+          ]
+
+          return markers
+            .map(marker => {
+              const index = this.timeIndexForTrade(timeValues, marker.value)
+              if (index < 0) return null
+              return {
+                type: "line",
+                x0: index,
+                x1: index,
+                y0: 0,
+                y1: 1,
+                yref: "paper",
+                line: { color: marker.color, width: 2, dash: "dot" },
+                label: {
+                  text: marker.label,
+                  textposition: "end",
+                  font: { color: marker.color, size: 12 }
+                }
+              }
+            })
+            .filter(Boolean)
+        },
+        shortTime(value) {
+          if (!value) return "-"
+          const text = String(value)
+          return text.length >= 16 ? text.slice(11, 16) : text
+        },
+        shortDateTime(value) {
+          if (!value) return "-"
+          const text = String(value)
+          if (text.length >= 16) return `${text.slice(5, 10)} ${text.slice(11, 16)}`
+          return text
+        },
+        async loadJson(url) {
+          const res = await fetch(API_BASE + url, { cache: "no-store" })
+          const data = await res.json()
+          if (!res.ok || data.error || data.ok === false) {
+            throw new Error(data.error || "Request failed")
+          }
+          return data
+        },
+        async postJson(url, payload) {
+          const res = await fetch(API_BASE + url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload || {})
+          })
+          const data = await res.json()
+          if (!res.ok || data.error || data.ok === false) {
+            throw new Error(data.error || "Request failed")
+          }
+          return data
+        },
+        flagshipKey(item) {
+          if (item.hidden_key) return String(item.hidden_key).toUpperCase()
+          if (item.kind === "pair") {
+            return `PAIR:${String(item.name || "").trim().toUpperCase().replaceAll(" / ", "_")}`
+          }
+          return `SINGLE:${String(item.symbol || item.name || "").trim().toUpperCase()}`
+        },
+        async setFlagshipHidden(item, hidden) {
+          const key = this.flagshipKey(item)
+          this.hiddenSavingKey = key
+          try {
+            await this.postJson("/api/flagship-hidden", { key, hidden })
+            this.flagshipItems = this.flagshipItems.map(row => {
+              if (this.flagshipKey(row) !== key) return row
+              return { ...row, hidden }
+            })
+            if (!hidden && this.hiddenFlagshipCount === 0) {
+              this.showHiddenFlagship = false
+            }
+            this.flagshipStatusText = hidden ? `${item.name} hidden` : `${item.name} visible`
+          } catch (err) {
+            this.flagshipError = err.message
+          } finally {
+            this.hiddenSavingKey = ""
+          }
+        },
+        async loadPairs(force) {
+          this.loadingPairs = true
+          this.error = ""
+          if (force) {
+            this.detailPayloadCache = {}
+          }
+          try {
+            const data = await this.loadJson(force ? "/api/pairs/refresh" : "/api/pairs")
+            this.demoMode = false
+            this.pairs = data.items || (data.pairs || []).map(name => ({ name, kind: "pair" }))
+            if (this.pairs.length === 0) {
+              this.useDemoData("Demo mode: API returned no pairs")
+              return
+            }
+            if (!this.selectedName && this.pairs.length > 0) {
+              this.selectedName = this.pairs[0].name
+            }
+            this.statusText = force ? "Pairs refreshed" : "Pairs loaded"
+          } catch (err) {
+            this.useDemoData(`Demo mode: ${err.message}`)
+          } finally {
+            this.loadingPairs = false
+          }
+        },
+        async selectPair(name) {
+          this.currentView = "detail"
+          this.selectedName = name
+          await this.loadSelected(false)
+        },
+        async loadSelected(force = false) {
+          if (!this.selectedName) return
+          const loadVersion = ++this.detailLoadVersion
+          const cacheKey = String(this.selectedName || "")
+          this.loadingPair = true
+          this.error = ""
+          this.selectedTradeHistoryId = null
+          this.selectedTradeHistoryItem = null
+          try {
+            if (!force && this.detailPayloadCache[cacheKey]) {
+              this.current = this.detailPayloadCache[cacheKey]
+            } else {
+              const refreshQuery = force ? "?refresh=1" : ""
+              const payload = await this.loadJson(`/api/${encodeURIComponent(this.selectedName)}${refreshQuery}`)
+              if (loadVersion !== this.detailLoadVersion) return
+              this.detailPayloadCache[cacheKey] = payload
+              this.current = payload
+            }
+            if (loadVersion !== this.detailLoadVersion) return
+            this.demoMode = false
+            this.statusText = force
+              ? "Updated " + new Date().toLocaleTimeString()
+              : "Ready"
+            await nextTick()
+            if (loadVersion === this.detailLoadVersion && this.currentView === "detail") {
+              await this.renderChart()
+              this.loadTradeHistory()
+            }
+          } catch (err) {
+            if (loadVersion !== this.detailLoadVersion) return
+            this.current = this.makeCurrentDemo()
+            this.demoMode = true
+            this.error = ""
+            this.statusText = `Demo mode: ${err.message}`
+            await nextTick()
+            if (loadVersion === this.detailLoadVersion && this.currentView === "detail") {
+              await this.renderChart()
+              this.loadTradeHistory()
+            }
+          } finally {
+            if (loadVersion === this.detailLoadVersion) {
+              this.loadingPair = false
+            }
+          }
+        },
+        async loadTradeHistory() {
+          if (!this.selectedName) return
+          this.loadingTradeHistory = true
+          this.tradeHistory = []
+          this.selectedTradeHistoryId = null
+          this.selectedTradeHistoryItem = null
+          try {
+            const kind = this.isSingle ? "single" : "pair"
+            const data = await this.loadJson(`/api/orders/history/${encodeURIComponent(this.selectedName)}?kind=${kind}`)
+            this.tradeHistory = data.items || []
+          } catch (err) {
+            this.tradeHistory = this.isSingle ? DEMO_SINGLE_TRADE_HISTORY : DEMO_PAIR_TRADE_HISTORY
+          } finally {
+            this.loadingTradeHistory = false
+          }
+        },
+        async loadWaitingEntry() {
+          this.loadingWaiting = true
+          try {
+            const data = await this.loadJson("/api/waiting-entry")
+            this.waitingError = ""
+            this.waitingLive = data.source === "waiting_entry"
+            this.waitingSummary = {
+              count: data.count || 0,
+              live_count: data.live_count || 0,
+              trigger_count: data.trigger_count || 0,
+              locked_count: data.locked_count || 0,
+              updated_at: data.updated_at || ""
+            }
+            this.waitingItems = data.items || []
+            const source = data.source === "waiting_entry" ? "waiting_entry" : "fallback"
+            this.waitingStatusText = data.updated_at ? `${source} ${data.updated_at}` : source
+          } catch (err) {
+            this.waitingError = err.message
+            this.waitingLive = false
+            this.waitingSummary = {
+              count: 0,
+              live_count: 0,
+              trigger_count: 0,
+              locked_count: 0,
+              updated_at: ""
+            }
+            this.waitingItems = []
+            this.waitingStatusText = "waiting_entry offline"
+          } finally {
+            this.loadingWaiting = false
+          }
+        },
+        async loadMarketCalendar() {
+          try {
+            const data = await this.loadJson("/api/market-calendar")
+            this.calendarError = data.error || ""
+            this.marketCalendar = {
+              source: data.source || "",
+              symbol: data.symbol || "SPY",
+              saved_at_bj: data.saved_at_bj || "",
+              sessions: data.sessions || [],
+              session_count: data.session_count || 0,
+              closed_days: data.closed_days || [],
+              raw_part_count: data.raw_part_count,
+              first_date: data.first_date,
+              last_date: data.last_date
+            }
+          } catch (err) {
+            this.calendarError = err.message
+            this.marketCalendar = { sessions: [], closed_days: [], session_count: 0, source: "unavailable" }
+          }
+        },
+        marketIsOpen() {
+          const now = Date.now()
+          return (this.marketCalendar.sessions || []).some(session => {
+            const open = Date.parse(session.open_bj || session.open_ny || "")
+            const close = Date.parse(session.close_bj || session.close_ny || "")
+            return Number.isFinite(open) && Number.isFinite(close) && open <= now && now < close
+          })
+        },
+        async loadHomeSnapshots(force) {
+          // Fetch the calendar once when entering Home. After the close the
+          // timer remains local-only and issues no API calls; the explicit
+          // entry load still lets the server return its single cached fallback.
+          if (force) {
+            await this.loadMarketCalendar()
+          }
+          if (force || this.marketIsOpen()) {
+            this.loadWaitingEntry()
+            this.loadFlagshipBoard()
+          }
+        },
+        async loadFlagshipBoard() {
+          try {
+            const data = await this.loadJson("/api/flagship-board")
+            this.flagshipError = ""
+            this.flagshipLive = data.source === "flagship_board" && !data.stale
+            this.flagshipItems = data.items || []
+            this.flagshipAccount = data.account || {}
+            const source = data.source === "flagship_board" ? "flagship_board" : "fallback"
+            const stale = data.stale ? " · stale" : ""
+            this.flagshipStatusText = data.updated_at ? `${source} ${data.updated_at}${stale}` : `${source}${stale}`
+          } catch (err) {
+            this.flagshipError = err.message
+            this.flagshipLive = false
+            this.flagshipItems = []
+            this.flagshipAccount = {}
+            this.flagshipStatusText = "flagship offline"
+          }
+        },
+        useDemoData(message) {
+          this.demoMode = true
+          this.error = ""
+          this.statusText = message
+          this.pairs = DEMO_PAIRS
+          if (!this.selectedName) {
+            this.selectedName = DEMO_PAIRS[0].name
+          }
+          this.current = this.makeCurrentDemo()
+          this.tradeHistory = this.isSingle ? DEMO_SINGLE_TRADE_HISTORY : DEMO_PAIR_TRADE_HISTORY
+          if (this.currentView === "detail") {
+            nextTick(() => this.renderChart())
+          }
+        },
+        makeCurrentDemo() {
+          const demo = buildDemoSeries()
+          const name = String(this.selectedName || "").toLowerCase()
+          if (name === "xom_cvx") {
+            demo.x_label = "CVX"
+            demo.y_label = "XOM"
+            demo.beta = 0.9128
+            demo.alpha = -4.721
+          }
+          if (name === "spy") {
+            demo.kind = "single"
+            demo.symbol = "SPY"
+            demo.x_label = ""
+            demo.y_label = ""
+            demo.beta = null
+          }
+          return demo
+        },
+        async renderChart() {
+          const renderVersion = ++this.chartRenderVersion
+          if (this.isSingle) {
+            const price = this.current.price || []
+            const returns = this.current.return_pct || []
+            const time = this.current.time || []
+            const tradingAxis = this.buildTradingAxis(time)
+            const x = tradingAxis.plotX.length ? tradingAxis.plotX : price.map((_, index) => index)
+            const shapes = this.tradeHistoryShapes(time)
+            await Plotly.react("singlePriceChart", [{
+              x,
+              y: price,
+              type: "scatter",
+              mode: "lines",
+              name: "Price",
+              line: { color: "#33d17a", width: 2.4 },
+              customdata: time.map((item, index) => [item, returns[index]]),
+              hovertemplate: "Time: %{customdata[0]}<br>Price: %{y:.2f}<br>Return: %{customdata[1]:.2f}%<extra></extra>"
+            }], {
+              margin: { l: 56, r: 18, t: 12, b: 42 },
+              paper_bgcolor: "rgba(17,24,36,0)",
+              plot_bgcolor: "rgba(17,24,36,0)",
+              font: { color: "#d9e2ef" },
+              xaxis: {
+                title: "Trading Days",
+                gridcolor: "rgba(148,163,184,0.14)",
+                zeroline: false,
+                range: [0, Math.max(0, x.length - 1)],
+                tickmode: "array",
+                tickvals: tradingAxis.tickvals,
+                ticktext: tradingAxis.ticktext
+              },
+              yaxis: { title: "Price", gridcolor: "rgba(148,163,184,0.14)", zerolinecolor: "rgba(148,163,184,0.28)" },
+              shapes
+            }, {
+              responsive: true,
+              scrollZoom: false,
+              displayModeBar: false,
+              doubleClick: false,
+              dragmode: false,
+              staticPlot: true
+            })
+            if (renderVersion !== this.chartRenderVersion) return
+            return
+          }
+          const spread = this.current.spread || []
+          const spreadTime = this.current.spread_time || []
+          const spreadAxis = this.buildTradingAxis(spreadTime)
+          const spreadX = spreadAxis.plotX.length ? spreadAxis.plotX : spread.map((_, index) => index)
+          const bandTime = this.current.spread_band_time || []
+          const timeIndex = new Map(spreadTime.map((item, index) => [item, index]))
+          const dailyBands = bandTime
+            .map((item, index) => ({
+              x: timeIndex.get(item),
+              time: item,
+              mean: (this.current.daily_rolling_mean || [])[index],
+              upper: (this.current.daily_upper_2sigma || [])[index],
+              lower: (this.current.daily_lower_2sigma || [])[index]
+            }))
+            .filter(item => Number.isFinite(item.x))
+          const bandX = dailyBands.map(item => item.x)
+          const rollingMean = dailyBands.map(item => item.mean)
+          const upperBand = dailyBands.map(item => item.upper)
+          const lowerBand = dailyBands.map(item => item.lower)
+          const shapes = this.tradeHistoryShapes(spreadTime)
+          await Plotly.react("spreadChart", [
+            {
+              x: spreadX,
+              y: spread,
+              type: "scatter",
+              mode: "lines",
+              name: "Fixed-beta spread",
+              line: { color: "#38d5ff", width: 2.2 },
+              customdata: spreadTime,
+              hovertemplate: "Time: %{customdata}<br>Spread: %{y:.5f}<extra></extra>"
+            },
+            {
+              x: bandX,
+              y: rollingMean,
+              type: "scatter",
+              mode: "lines",
+              name: "Trailing mean",
+              line: { color: "#9ca3af", width: 1.7, dash: "dash" },
+              hoverinfo: "skip"
+            },
+            {
+              x: bandX,
+              y: upperBand,
+              type: "scatter",
+              mode: "lines",
+              name: "Mean + 2 Sigma",
+              line: { color: "#ff5f73", width: 1.2, dash: "dot" },
+              hoverinfo: "skip"
+            },
+            {
+              x: bandX,
+              y: lowerBand,
+              type: "scatter",
+              mode: "lines",
+              name: "Mean - 2 Sigma",
+              line: { color: "#ff5f73", width: 1.2, dash: "dot" },
+              fill: "tonexty",
+              fillcolor: "rgba(255, 95, 115, 0.09)",
+              hoverinfo: "skip"
+            }
+          ], {
+            margin: { l: 62, r: 18, t: 12, b: 42 },
+            paper_bgcolor: "rgba(17,24,36,0)",
+            plot_bgcolor: "rgba(17,24,36,0)",
+            font: { color: "#d9e2ef" },
+            legend: { orientation: "h", y: 1.14 },
+            xaxis: {
+              title: "Trading Days",
+              gridcolor: "rgba(148,163,184,0.14)",
+              zeroline: false,
+              range: [0, Math.max(0, spreadX.length - 1)],
+              tickmode: "array",
+              tickvals: spreadAxis.tickvals,
+              ticktext: spreadAxis.ticktext
+            },
+            yaxis: { title: "Fixed-beta price spread", gridcolor: "rgba(148,163,184,0.14)", zerolinecolor: "rgba(148,163,184,0.28)" },
+            shapes
+          }, {
+            responsive: true,
+            scrollZoom: false,
+            displayModeBar: false,
+            doubleClick: false,
+            dragmode: false,
+            staticPlot: true
+          })
+          if (renderVersion !== this.chartRenderVersion) return
+          const kappa = this.current.kappa_hat_daily_equivalent_series || []
+          const negativeKappa = kappa.map(value => {
+            const number = Number(value)
+            return Number.isFinite(number) && number < 0 ? number : null
+          })
+          await Plotly.react("kappaChart", [{
+            x: spreadX,
+            y: negativeKappa,
+            type: "scatter",
+            mode: "lines",
+            line: { color: "rgba(192, 132, 252, 0)", width: 0 },
+            fill: "tozeroy",
+            fillgradient: {
+              type: "vertical",
+              // The low end is farther below zero; retain a visible tint at
+              // zero while deepening the lavender-pink as Kappa becomes more negative.
+              colorscale: [
+                [0, "rgba(91, 33, 182, 0.68)"],
+                [0.55, "rgba(147, 78, 226, 0.43)"],
+                [1, "rgba(192, 132, 252, 0.26)"]
+              ]
+            },
+            hoverinfo: "skip",
+            showlegend: false
+          }, {
+            x: spreadX,
+            y: kappa,
+            type: "scatter",
+            mode: "lines",
+            name: "Kappa hat (daily equivalent)",
+            line: { color: "#c084fc", width: 2.1 },
+            customdata: spreadTime,
+            hovertemplate: "Time: %{customdata}<br>Kappa hat: %{y:.5f}<extra></extra>"
+          }], {
+            margin: { l: 62, r: 18, t: 12, b: 42 },
+            paper_bgcolor: "rgba(17,24,36,0)",
+            plot_bgcolor: "rgba(17,24,36,0)",
+            font: { color: "#d9e2ef" },
+            showlegend: false,
+            xaxis: {
+              title: "Trading Days",
+              gridcolor: "rgba(148,163,184,0.14)",
+              zeroline: false,
+              range: [0, Math.max(0, spreadX.length - 1)],
+              tickmode: "array",
+              tickvals: spreadAxis.tickvals,
+              ticktext: spreadAxis.ticktext
+            },
+            yaxis: {
+              title: "Kappa hat (daily equivalent)",
+              gridcolor: "rgba(148,163,184,0.14)",
+              zeroline: true,
+              zerolinecolor: "rgba(148,163,184,0.35)"
+            },
+            shapes: this.tradeHistoryShapes(spreadTime)
+          }, {
+            responsive: true,
+            scrollZoom: false,
+            displayModeBar: false,
+            doubleClick: false,
+            dragmode: false,
+            staticPlot: true
+          })
+          if (renderVersion !== this.chartRenderVersion) return
+        }
+      }
+    }).mount("#app")
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-07-25T12:22:17",
+  "result_count": 191,
+  "ok_count": 191,
+  "failed_count": 0,
+  "sessions": 7,
+  "metric": "unadjusted close × reported volume",
+  "partial": true,
+  "note": "Yahoo rate-limited the run; only verified successful rows are retained."
+}

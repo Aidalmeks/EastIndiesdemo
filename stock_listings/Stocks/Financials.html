@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Financials 行业分析</title>
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial;
+    margin: 40px;
+    background-color: #f8f9fa;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+h1 { border-bottom: 2px solid #333; }
+
+.back {
+    margin-bottom: 20px;
+    display: inline-block;
+    cursor: pointer;
+    color: blue;
+}
+
+.en {
+    color: #666;
+    font-size: 14px;
+    margin-left: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="back" onclick="goBack()">← 返回 GICS</div>
+
+<h1>金融（Financials）</h1>
+
+<!-- 4010 -->
+<div class="card">
+<h2>4010 银行 <span class="en">Banks</span></h2>
+
+<ul>
+<li><b>401010 银行</b> <span class="en">Banks</span>
+    <ul>
+        <li>40101010 多元银行 <span class="en">Diversified Banks</span></li>
+        <li>40101015 区域性银行 <span class="en">Regional Banks</span></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<!-- 4020 -->
+<div class="card">
+<h2>4020 金融服务 <span class="en">Financial Services</span></h2>
+
+<ul>
+<li><b>402010 金融服务</b> <span class="en">Financial Services</span>
+    <ul>
+        <li>40201020 多元金融服务 <span class="en">Diversified Financial Services</span></li>
+        <li>40201030 多行业控股 <span class="en">Multi-Sector Holdings</span></li>
+        <li>40201040 专业金融服务 <span class="en">Specialized Finance</span></li>
+        <li>40201050 商业与住宅按揭金融 <span class="en">Commercial & Residential Mortgage Finance</span></li>
+        <li>40201060 交易与支付处理 <span class="en">Transaction & Payment Processing Services</span></li>
+    </ul>
+</li>
+
+<li><b>402020 消费金融</b> <span class="en">Consumer Finance</span>
+    <ul>
+        <li>40202010 消费金融 <span class="en">Consumer Finance</span></li>
+    </ul>
+</li>
+
+<li><b>402030 资本市场</b> <span class="en">Capital Markets</span>
+    <ul>
+        <li>40203010 资产管理与托管银行 <span class="en">Asset Management & Custody Banks</span></li>
+        <li>40203020 投资银行与经纪业务 <span class="en">Investment Banking & Brokerage</span></li>
+        <li>40203030 多元资本市场 <span class="en">Diversified Capital Markets</span></li>
+        <li>40203040 交易所与金融数据 <span class="en">Financial Exchanges & Data</span></li>
+    </ul>
+</li>
+
+<li><b>402040 抵押房地产投资信托</b> <span class="en">Mortgage REITs</span>
+    <ul>
+        <li>40204010 抵押REITs <span class="en">Mortgage REITs</span></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<!-- 4030 -->
+<div class="card">
+<h2>4030 保险 <span class="en">Insurance</span></h2>
+
+<ul>
+<li><b>403010 保险</b> <span class="en">Insurance</span>
+    <ul>
+        <li>40301010 保险经纪 <span class="en">Insurance Brokers</span></li>
+        <li>40301020 寿险与健康险 <span class="en">Life & Health Insurance</span></li>
+        <li>40301030 综合保险 <span class="en">Multi-line Insurance</span></li>
+        <li>40301040 财产与意外险 <span class="en">Property & Casualty Insurance</span></li>
+        <li>40301050 再保险 <span class="en">Reinsurance</span></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<script>
+function goBack() {
+    window.location.href = "GICS.html";
+}
+</script>
+
+</body>
+</html>

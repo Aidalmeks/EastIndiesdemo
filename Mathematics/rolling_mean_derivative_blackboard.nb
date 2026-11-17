@@ -1,0 +1,377 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 15.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     13600,        322]
+NotebookOptionsPosition[      9383,        248]
+NotebookOutlinePosition[      9897,        266]
+CellTagsIndexPosition[      9854,        263]
+WindowTitle->20 \:65E5\:6EDA\:52A8\:5747\:7EBF\:FF1A\:65E0\:672A\:6765\:51FD\
+\:6570\:5BFC\:6570
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["\:4ece 20 \:65e5\:6eda\:52a8\:5747\:7ebf\:5b66\:4e60\:5bfc\:6570", \
+"Title",ExpressionUUID->"643fd60a-564b-4040-bb21-8f213ca94bc8"],
+
+Cell["\:9ed1\:677f\:ff1a\:65e0\:672a\:6765\:51fd\:6570\:7684\:6bcf\:65e5\:53d8\
+\:5316\:7387", "Subtitle",ExpressionUUID->"05c99713-3daf-4e71-88e1-\
+effcb3b62be5"],
+
+Cell[CellGroupData[{
+
+Cell["1. \:5b9a\:4e49", "Section",ExpressionUUID->"0ce8eab3-80e8-4dc5-8a70-140fb2e37981"],
+
+Cell["\:4ee4 P_t \:4e3a\:7b2c t \:4e2a\:4ea4\:6613\:65e5\:7684\:6536\:76d8\
+\:4ef7\:3002", "Text",ExpressionUUID->"2758f41b-cc58-4186-b5d3-d1a41390482f"],
+
+Cell["M_t = (P_t + P_(t-1) + ... + P_(t-19)) / 20", "DisplayFormula",
+ CellChangeTimes->{{3.995247924378837*^9, 
+  3.995247925478651*^9}},ExpressionUUID->"912af29a-9f64-4d02-b2ec-\
+ca2c2c673e8f"],
+
+Cell["\:8fd9\:662f\:5411\:540e\:770b\:7684 20 \:65e5\:5747\:7ebf\:ff1a\:7a97\
+\:53e3\:662f [t-19, t]\:ff0c\:53ea\:5305\:542b\:4eca\:5929\:548c\:8fc7\:53bb\
+\:7684\:6570\:636e\:3002", "Text",ExpressionUUID->"0a3f9a30-b241-4abe-a866-\
+11b0f00f256f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["2. \:65e5\:7ebf\:7684\:5bfc\:6570", "Section",ExpressionUUID->"412445ff-aeb9-42e3-970e-5b7070095c98"],
+
+Cell["\:65e5\:7ebf\:662f\:79bb\:6563\:70b9\:3002\:6211\:4eec\:628a\:4eca\:5929\
+\:76f8\:5bf9\:6628\:5929\:7684\:5747\:7ebf\:53d8\:5316\:5b9a\:4e49\:4e3a\:79bb\
+\:6563\:5bfc\:6570\:ff1a", "Text",ExpressionUUID->"40679c9f-b0e8-4f00-8914-\
+46cb0ab6ce48"],
+
+Cell["D_t = M_t - M_(t-1)", "DisplayFormula",ExpressionUUID->"8eaaeaaa-dc2b-4648-b5cf-495bf002bcb0"],
+
+Cell["\:5b83\:7684\:5355\:4f4d\:662f\:4ef7\:683c\:ff0f\:4ea4\:6613\:65e5\:ff0c\
+\:5e76\:4e14\:5f52\:5c5e\:4e8e t \:65e5\:6536\:76d8\:540e\:3002", "Text",Expre\
+ssionUUID->"50b5e31d-acb5-40f3-828a-776662ab3057"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["3. \:624b\:6413\:63a8\:5bfc", "Section",ExpressionUUID->"0002b9df-de2c-4cc0-b4ec-af0fa636f89d"],
+
+Cell["\:628a\:4e24\:4e2a\:76f8\:90bb\:7a97\:53e3\:76f8\:51cf\:ff1a", "Text",ExpressionUUID->"c4938132-787d-4883-9697-ef40f82d382f"],
+
+Cell["D_t = [P_t + P_(t-1) + ... + P_(t-19)] / 20", "DisplayFormula",ExpressionUUID->"826763d6-c518-4623-b478-f4bcc3bdb678"],
+
+Cell["      - [P_(t-1) + P_(t-2) + ... + P_(t-20)] / 20", "DisplayFormula",ExpressionUUID->"4e08de69-bbb7-4c26-b0bd-7e330be68738"],
+
+Cell["\:4e2d\:95f4\:5171\:540c\:7684 19 \:9879\:9010\:9879\:62b5\:6d88\:3002\
+\:53ea\:5269\:4eca\:5929\:65b0\:8fdb\:5165\:7a97\:53e3\:7684\:4ef7\:683c\:ff0c\
+\:548c 20 \:4e2a\:4ea4\:6613\:65e5\:524d\:521a\:79bb\:5f00\:7a97\:53e3\:7684\
+\:4ef7\:683c\:ff1a", "Text",ExpressionUUID->"48937dff-661b-4bb3-b624-\
+e788b9781c86"],
+
+Cell["D_t = (P_t - P_(t-20)) / 20", "DisplayFormula",ExpressionUUID->"3a7a3ca6-13a4-43a4-b3ab-adb3765e8bbe"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["4. \:65e0\:672a\:6765\:51fd\:6570\:68c0\:67e5", "Section",ExpressionUUID->"4c311c38-fd97-4d62-ade5-042c5b2d57a9"],
+
+Cell["\<\
+\:5728 t \:65e5\:6536\:76d8\:540e\:ff0cP_t \:548c P_(t-20) \:90fd\:5df2\:77e5\
+\:3002\:56e0\:6b64 D_t \:53ef\:4ee5\:5f53\:65e5\:8ba1\:7b97\:ff1b\:516c\:5f0f\
+\:4e2d\:6ca1\:6709 P_(t+1) \:6216\:4efb\:4f55\:672a\:6765\:4ef7\:683c\:3002\
+\>", "Text",ExpressionUUID->"f49daaff-dc0f-4c82-bc93-06f6459d145b"],
+
+Cell["\:4e0d\:8981\:4f7f\:7528 centered rolling mean\:3002\:5c45\:4e2d\:7a97\
+\:53e3\:4f1a\:5f15\:7528\:672a\:6765\:4ef7\:683c\:ff0c\:4e0d\:80fd\:7528\:4e8e\
+\:5f53\:65e5\:56de\:6d4b\:6216\:4fe1\:53f7\:3002", "Text",ExpressionUUID->\
+"650d864f-b947-44dd-9306-cf7b67ec166c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["5. Wolfram \:9a8c\:8bc1", "Section",ExpressionUUID->"b9086988-9301-455d-83cb-84cb0a0c6ff3"],
+
+Cell["\:8fd0\:884c\:4e0b\:9762\:7684\:683c\:5b50\:ff0c\:9a8c\:8bc1\:76f8\:90bb\
+\:5747\:7ebf\:4e4b\:5dee\:4f1a\:81ea\:52a8\:5316\:7b80\:4e3a\:624b\:7b97\:516c\
+\:5f0f\:3002", "Text",ExpressionUUID->"941c4a8c-6e25-490d-9fdb-a1f241e4d192"],
+
+Cell[CellGroupData[{
+
+Cell["\<\
+Clear[p, t, ma]
+ma[t_] := Sum[p[t - k], {k, 0, 19}]/20
+FullSimplify[ma[t] - ma[t - 1]]\
+\>", "Input",
+ CellLabel->"In[1]:=",ExpressionUUID->"367e5ae9-61de-4fbb-9068-268c99642eb5"],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox["1", "20"], " ", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{"-", 
+     RowBox[{"p", "[", 
+      RowBox[{
+       RowBox[{"-", "20"}], "+", "t"}], "]"}]}], "+", 
+    RowBox[{"p", "[", "t", "]"}]}], ")"}]}]], "Output",
+ CellChangeTimes->{3.9952478171945477`*^9},
+ CellLabel->"Out[3]=",ExpressionUUID->"33d8e35c-118d-4ff9-810e-423722b43647"]
+}, Open  ]],
+
+Cell["\:9884\:671f\:7ed3\:679c\:ff1a(p[t] - p[t - 20])/20", "Text",ExpressionUUID->"de77725b-a76c-4426-86b4-af486d0be241"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["6. \:5bf9\:5b9e\:9645\:6536\:76d8\:4ef7\:5217\:8868\:8ba1\:7b97", \
+"Section",ExpressionUUID->"416f02e8-9fb4-44ab-9685-95d2e36c6410"],
+
+Cell["prices \:5e94\:6309\:65f6\:95f4\:4ece\:65e9\:5230\:665a\:6392\:5217\
+\:3002\:4e0b\:9762\:7684\:4e24\:79cd\:8ba1\:7b97\:5e94\:7ed9\:51fa\:540c\:4e00\
+\:5217\:8868\:3002", "Text",ExpressionUUID->"baee7c8d-54f3-42e0-b691-\
+8d98ea96497b"],
+
+Cell["先运行这个演示价格列表，就不会出现 prices 未定义的报错。以后使用真实行情时，只需把这一格替换为你自己的收盘价列表。", "Text",ExpressionUUID->"e2861ea9-c1d7-425d-bebd-af71769f1498"],
+
+Cell["prices = Table[100 + Sin[2 Pi t/20], {t, 0, 79}];", "Input",ExpressionUUID->"980e21f0-6ac3-47c5-93b7-c65fdad3bcd4"],
+
+Cell[CellGroupData[{
+
+Cell["\<\
+rolling20 = MovingAverage[prices, 20];
+derivativeDaily = Differences[rolling20];
+
+derivativeDirect = Table[(prices[[i]] - prices[[i - 20]])/20,
+  {i, 21, Length[prices]}];
+
+derivativeDaily == derivativeDirect\
+\>", "Input",
+ CellLabel->"In[29]:=",ExpressionUUID->"e50ed20f-8f87-428a-bdfa-c2f93416f145"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "MovingAverage", "vecmat", 
+   "\"\:4f4d\:7f6e \\!\\(\\*RowBox[{\\\"1\\\"}]\\) \:5904\:7684\:53c2\:6570 \
+\\!\\(\\*RowBox[{\\\"prices\\\"}]\\) \:65e2\:4e0d\:662f\:4e00\:4e2a\:975e\
+\:7a7a\:5411\:91cf\:ff0c\:4e5f\:4e0d\:662f\:4e00\:4e2a\:975e\:7a7a\:77e9\:9635\
+.\"", 2, 29, 6, 21741339479275039217, "Local"},
+  "MessageTemplate",
+  BaseStyle->"MSG"]], "Message",
+ CellChangeTimes->{{3.9952478653838863`*^9, 3.995247870806473*^9}, {
+  3.9952479478923273`*^9, 3.995247952035737*^9}},
+ CellLabel->
+  "\:6b63\:5728\:8ba1\:7b97In[29]:=",ExpressionUUID->"22471c59-4463-4069-9691-\
+fc6ef479984c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Differences", "[", 
+   RowBox[{"MovingAverage", "[", 
+    RowBox[{"prices", ",", "20"}], "]"}], "]"}], "\[Equal]", 
+  RowBox[{"{", "}"}]}]], "Output",
+ CellChangeTimes->{{3.9952479478947973`*^9, 3.995247952038103*^9}},
+ CellLabel->"Out[34]=",ExpressionUUID->"fe0841bf-4f15-4b72-bdb4-fb7e96d83646"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Differences", "[", 
+   RowBox[{"MovingAverage", "[", 
+    RowBox[{"prices", ",", "20"}], "]"}], "]"}], "\[Equal]", 
+  RowBox[{"{", "}"}]}]], "Input",
+ CellChangeTimes->{3.995247873171596*^9},
+ CellLabel->"In[35]:=",ExpressionUUID->"7a42ed27-06f7-4b05-bbfc-c9aa27ce37de"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "MovingAverage", "vecmat", 
+   "\"\:4f4d\:7f6e \\!\\(\\*RowBox[{\\\"1\\\"}]\\) \:5904\:7684\:53c2\:6570 \
+\\!\\(\\*RowBox[{\\\"prices\\\"}]\\) \:65e2\:4e0d\:662f\:4e00\:4e2a\:975e\
+\:7a7a\:5411\:91cf\:ff0c\:4e5f\:4e0d\:662f\:4e00\:4e2a\:975e\:7a7a\:77e9\:9635\
+.\"", 2, 35, 7, 21741339479275039217, "Local"},
+  "MessageTemplate",
+  BaseStyle->"MSG"]], "Message",
+ CellChangeTimes->{3.9952478733568907`*^9, 3.995247954489093*^9},
+ CellLabel->
+  "\:6b63\:5728\:8ba1\:7b97In[35]:=",ExpressionUUID->"e546c6cd-139a-454c-a145-\
+ffd3878db2d9"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Differences", "[", 
+   RowBox[{"MovingAverage", "[", 
+    RowBox[{"prices", ",", "20"}], "]"}], "]"}], "\[Equal]", 
+  RowBox[{"{", "}"}]}]], "Output",
+ CellChangeTimes->{3.995247873358984*^9, 3.995247954491783*^9},
+ CellLabel->"Out[35]=",ExpressionUUID->"54cba42c-f216-4f82-9ee0-c6ce6c7e3dc1"]
+}, Open  ]],
+
+Cell["\:7b2c\:4e00\:4e2a\:5bfc\:6570\:9700\:8981 21 \:4e2a\:4ea4\:6613\:65e5\
+\:7684\:4ef7\:683c\:3002\:7ed3\:679c\:4e2d\:7684\:6bcf\:4e2a\:503c\:5bf9\:5e94\
+\:540e\:4e00\:4e2a\:4ea4\:6613\:65e5\:3002", "Text",ExpressionUUID->"2a3b617b-\
+ca9c-4d5b-84db-c9e826b2f285"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["7. \:9ed1\:677f\:7ec3\:4e60", "Section",ExpressionUUID->"1a695890-ce00-4769-ae4e-b66fd672d01b"],
+
+Cell["\<\
+\:82e5 P_t = 31.80\:ff0c\:4e14 P_(t-20) = 29.40\:ff0c\:5219 D_t = (31.80 - \
+29.40)/20 = 0.12\:3002\
+\>", "Text",ExpressionUUID->"8ac21758-117e-424d-aec3-53b99f802d7c"],
+
+Cell["\:8bf7\:89e3\:91ca\:ff1a0.12 \:8868\:793a\:4ef7\:683c\:6da8\:4e86 0.12\
+\:ff0c\:8fd8\:662f\:5747\:7ebf\:76f8\:5bf9\:6628\:5929\:79fb\:52a8\:4e86 0.12\
+\:ff1f", "Text",ExpressionUUID->"244c621a-b5a0-4183-9405-002bc829ff02"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"f", "[", "x_", "]"}], ":=", 
+  RowBox[{
+   RowBox[{"A", "*", 
+    RowBox[{"Sin", "[", 
+     RowBox[{"2", "*", "Pi", "*", "x"}], "]"}]}], "+", "B"}]}]], "Input",
+ CellChangeTimes->{{3.995248392300912*^9, 3.99524845234578*^9}},
+ CellLabel->"In[36]:=",ExpressionUUID->"8f62573e-00ca-4840-ad74-f0d7769bbe24"]
+}, Open  ]]
+
+,
+Cell[CellGroupData[{
+
+Cell["动手实验：20 日周期的正弦价格", "Section",ExpressionUUID->"098193ee-605b-47f0-9c93-1479e670681c"],
+
+Cell["你刚刚写出了 f[x_] := 这个正确骨架。现在这一格只做两件事：指定波动高度 A 和中心线 B，然后把周期设为 20 天。请亲手运行它。", "Text",ExpressionUUID->"5417c69c-e0ea-4e5d-bb68-917ba85e2f3f"],
+
+Cell["A = 1;\nB = 0;\nf[x_] := A Sin[2 Pi x/20] + B", "Input",ExpressionUUID->"a3f01b9a-dd48-46d2-bcec-6a4a5adad804"],
+
+Cell["接下来把“从 x-19 到 x 的 20 个点求平均”写成一个新函数。运行后不会立即出图；它只是定义均线。", "Text",ExpressionUUID->"1d2516ce-dfef-4fdc-a330-460f40877b8e"],
+
+Cell["mean20[x_] := Mean[Table[f[x - k], {k, 0, 19}]]", "Input",ExpressionUUID->"de286bad-83cc-4ffa-9c03-e5a4da5c7bca"],
+
+Cell["现在画蓝色价格曲线与红色 20 日均线。注意红线是否正好在 0 上。", "Text",ExpressionUUID->"0a8682a5-1e9a-4112-b3bf-6ed812b4d8a9"],
+
+Cell["Plot[Evaluate[{f[x], mean20[x]}], {x, 0, 60},\n PlotRange -> {-1.2, 1.2},\n PlotStyle -> {Blue, {Red, Thick}},\n PlotLegends -> {\"price f(x)\", \"20-day mean\"},\n GridLines -> {Range[0, 60, 20], {0}}]", "Input",ExpressionUUID->"06cbdfe1-1bf8-4635-a1cd-9eea8e1cf3f1"],
+
+Cell["交互问题：把滑块拖到 20。红线会是水平的；如果把它拖到 19 或 21，红线就会重新波动。这就是“窗口恰好包含一个周期”的可视化。", "Text",ExpressionUUID->"af1c09fb-c94c-47fb-bd0e-b04fbfa13b40"],
+
+Cell["ma[x_, n_] := Mean[Table[f[x - k], {k, 0, n - 1}]];\nManipulate[\n Plot[Evaluate[{f[x], ma[x, n]}], {x, 0, 60},\n  PlotRange -> {-1.2, 1.2},\n  PlotStyle -> {Blue, {Red, Thick}},\n  PlotLegends -> {\"price f(x)\", \"n-day mean\"},\n  GridLines -> {Range[0, 60, 20], {0}}],\n {{n, 20, \"window length (days)\"}, 5, 40, 1, Appearance -> \"Labeled\"}\n]", "Input",ExpressionUUID->"bc4d0672-5867-434f-b59e-04872f0734e5"]
+}, Open  ]]
+
+,
+Cell[CellGroupData[{
+
+Cell["metapairs：统计套利 spread 的 trailing 均线", "Section",ExpressionUUID->"b666523c-6123-4dd7-a5d1-3dc7d6592d0c"],
+
+Cell["这一节先从 quant_data.metapairs 读取 active pair，再按共同日线构造两条腿与 spread = Y - beta X。beta 是你指定并固定的数，默认 0.642；spread 的均线与 sigma 都只使用 t 日及此前的数据。面板的 fit endpoint-detrended global beta 按端点连线的残差平方最小来拟合固定 beta，并在图上画出浅灰端点趋势线。它是全样本研究拟合，必须冻结后在未来独立样本检验，不能把同一段历史内的结果当成当时已知。", "Text",ExpressionUUID->"85e96abf-bde2-4f91-8ccb-18243cab88ce"],
+
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXDailyMovingAverageLab[]", "Input",ExpressionUUID->"cd42330a-3f8e-4817-8ae4-3bf0e453d07f"]
+}, Open  ]]
+
+,
+Cell[CellGroupData[{
+
+Cell["两条正弦腿：beta 为什么会局部有效？", "Section",ExpressionUUID->"e5e24446-d8e0-4264-a7d5-7308591150e5"],
+
+Cell["B 只改变 spread 的基线，不改变波动大小；因此改为随时间变化的振幅。两腿现在是 f[t] = 1 + A (1 + slope t/240) Sin[...]。slope = 0 表示振幅恒定；slope = 1 表示第 240 天振幅为起始时的两倍。默认同频同相、AA 振幅 0.30、CENX 振幅 0.50，所以两条 slope 也相同时，beta = 0.30/0.50 = 0.6 会全程抵消。只把 CENX amplitude slope 调大，固定 beta = 0.6 就会从起初接近抵消、逐渐变为明显波动。spread 图的 y-axis centre 与 y-axis half-range 固定纵轴尺度。白线始终是 trailing spread mean。", "Text",ExpressionUUID->"6d410dd8-0bfb-4a7f-aeda-1c0f689a0d24"],
+
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXSineSpreadLab[]", "Input",ExpressionUUID->"73d56029-596c-49f6-8627-e3671076ff03"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1915.5, 1031.25},
+WindowMargins->{{-2.25, Automatic}, {Automatic, -22.5}},
+WindowTitle->"20 \:65e5\:6eda\:52a8\:5747\:7ebf\:ff1a\:65e0\:672a\:6765\:51fd\
+\:6570\:5bfc\:6570",
+FrontEndVersion->"15.0 for Linux x86 (64-bit) (2026\:5e747\:67082\:65e5)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"63e7c0dc-eaab-49c2-870a-fd3f29883006"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[673, 24, 138, 1, 96, "Title",ExpressionUUID->"643fd60a-564b-4040-bb21-8f213ca94bc8"],
+Cell[814, 27, 163, 2, 52, "Subtitle",ExpressionUUID->"05c99713-3daf-4e71-88e1-effcb3b62be5"],
+Cell[CellGroupData[{
+Cell[1002, 33, 89, 0, 65, "Section",ExpressionUUID->"0ce8eab3-80e8-4dc5-8a70-140fb2e37981"],
+Cell[1094, 35, 153, 1, 33, "Text",ExpressionUUID->"2758f41b-cc58-4186-b5d3-d1a41390482f"],
+Cell[1250, 38, 195, 3, 25, "DisplayFormula",ExpressionUUID->"912af29a-9f64-4d02-b2ec-ca2c2c673e8f"],
+Cell[1448, 43, 247, 3, 33, "Text",ExpressionUUID->"0a3f9a30-b241-4abe-a866-11b0f00f256f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1732, 51, 107, 0, 65, "Section",ExpressionUUID->"412445ff-aeb9-42e3-970e-5b7070095c98"],
+Cell[1842, 53, 251, 3, 33, "Text",ExpressionUUID->"40679c9f-b0e8-4f00-8914-46cb0ab6ce48"],
+Cell[2096, 58, 100, 0, 25, "DisplayFormula",ExpressionUUID->"8eaaeaaa-dc2b-4648-b5cf-495bf002bcb0"],
+Cell[2199, 60, 210, 2, 33, "Text",ExpressionUUID->"50b5e31d-acb5-40f3-828a-776662ab3057"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2446, 67, 101, 0, 65, "Section",ExpressionUUID->"0002b9df-de2c-4cc0-b4ec-af0fa636f89d"],
+Cell[2550, 69, 131, 0, 33, "Text",ExpressionUUID->"c4938132-787d-4883-9697-ef40f82d382f"],
+Cell[2684, 71, 124, 0, 25, "DisplayFormula",ExpressionUUID->"826763d6-c518-4623-b478-f4bcc3bdb678"],
+Cell[2811, 73, 130, 0, 25, "DisplayFormula",ExpressionUUID->"4e08de69-bbb7-4c26-b0bd-7e330be68738"],
+Cell[2944, 75, 321, 4, 33, "Text",ExpressionUUID->"48937dff-661b-4bb3-b624-e788b9781c86"],
+Cell[3268, 81, 108, 0, 25, "DisplayFormula",ExpressionUUID->"3a7a3ca6-13a4-43a4-b3ab-adb3765e8bbe"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3413, 86, 119, 0, 65, "Section",ExpressionUUID->"4c311c38-fd97-4d62-ade5-042c5b2d57a9"],
+Cell[3535, 88, 312, 4, 33, "Text",ExpressionUUID->"f49daaff-dc0f-4c82-bc93-06f6459d145b"],
+Cell[3850, 94, 273, 3, 33, "Text",ExpressionUUID->"650d864f-b947-44dd-9306-cf7b67ec166c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4160, 102, 97, 0, 65, "Section",ExpressionUUID->"b9086988-9301-455d-83cb-84cb0a0c6ff3"],
+Cell[4260, 104, 237, 2, 33, "Text",ExpressionUUID->"941c4a8c-6e25-490d-9fdb-a1f241e4d192"],
+Cell[CellGroupData[{
+Cell[4522, 110, 189, 5, 63, "Input",ExpressionUUID->"367e5ae9-61de-4fbb-9068-268c99642eb5"],
+Cell[4714, 117, 373, 11, 45, "Output",ExpressionUUID->"33d8e35c-118d-4ff9-810e-423722b43647"]
+}, Open  ]],
+Cell[5102, 131, 122, 0, 33, "Text",ExpressionUUID->"de77725b-a76c-4426-86b4-af486d0be241"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5261, 136, 139, 1, 65, "Section",ExpressionUUID->"416f02e8-9fb4-44ab-9685-95d2e36c6410"],
+Cell[5403, 139, 240, 3, 33, "Text",ExpressionUUID->"baee7c8d-54f3-42e0-b691-8d98ea96497b"],
+Cell[CellGroupData[{
+Cell[5668, 146, 312, 9, 131, "Input",ExpressionUUID->"e50ed20f-8f87-428a-bdfa-c2f93416f145"],
+Cell[5983, 157, 620, 13, 26, "Message",ExpressionUUID->"22471c59-4463-4069-9691-fc6ef479984c"],
+Cell[6606, 172, 332, 7, 33, "Output",ExpressionUUID->"fe0841bf-4f15-4b72-bdb4-fb7e96d83646"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6975, 184, 305, 7, 44, "Input",ExpressionUUID->"7a42ed27-06f7-4b05-bbfc-c9aa27ce37de"],
+Cell[7283, 193, 567, 12, 26, "Message",ExpressionUUID->"e546c6cd-139a-454c-a145-ffd3878db2d9"],
+Cell[7853, 207, 328, 7, 33, "Output",ExpressionUUID->"54cba42c-f216-4f82-9ee0-c6ce6c7e3dc1"]
+}, Open  ]],
+Cell[8196, 217, 267, 3, 33, "Text",ExpressionUUID->"2a3b617b-ca9c-4d5b-84db-c9e826b2f285"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8500, 225, 101, 0, 65, "Section",ExpressionUUID->"1a695890-ce00-4769-ae4e-b66fd672d01b"],
+Cell[8604, 227, 178, 3, 33, "Text",ExpressionUUID->"8ac21758-117e-424d-aec3-53b99f802d7c"],
+Cell[8785, 232, 228, 2, 33, "Text",ExpressionUUID->"244c621a-b5a0-4183-9405-002bc829ff02"],
+Cell[9016, 236, 339, 8, 44, "Input",ExpressionUUID->"8f62573e-00ca-4840-ad74-f0d7769bbe24"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)

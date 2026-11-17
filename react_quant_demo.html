@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>React Quant Monitor Demo</title>
+  <link rel="icon" type="image/x-icon" href="bank.ico">
+  <link rel="stylesheet" href="vue_quant_demo.css">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="components/draggable_train_chart/plotly.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : ""
+    const h = React.createElement
+    const { useEffect, useMemo, useState } = React
+
+    function formatNumber(value, digits) {
+      const number = Number(value)
+      return Number.isFinite(number) ? number.toFixed(digits) : "-"
+    }
+
+    function formatPercent(value) {
+      const number = Number(value)
+      return Number.isFinite(number) ? `${number.toFixed(2)}%` : "-"
+    }
+
+    function displayName(item) {
+      return String(item.name || "").toUpperCase().replaceAll("_", " / ")
+    }
+
+    function demoPayload(name) {
+      const points = 160
+      const index = []
+      const time = []
+      const zscore = []
+      const spread = []
+      const priceX = []
+      const priceY = []
+      const price = []
+      const returnPct = []
+      const single = String(name || "").toLowerCase() === "spy"
+
+      for (let i = 0; i < points; i += 1) {
+        const z = Math.sin(i / 12) * 1.2 + Math.cos(i / 27) * 0.45
+        const px = 185 + Math.sin(i / 17) * 2 + i * 0.018
+        const py = 121 + Math.cos(i / 19) * 1.6 + i * 0.011
+        index.push(i)
+        time.push(`2026-05-${String(10 + Math.floor(i / 79)).padStart(2, "0")} 10:${String(i % 60).padStart(2, "0")}:00`)
+        zscore.push(z)
+        spread.push(1.5 + z * 0.38)
+        priceX.push(px)
+        priceY.push(py)
+        price.push(500 + Math.sin(i / 18) * 4 + i * 0.05)
+        returnPct.push((price[i] - price[0]) / price[0] * 100)
+      }
+
+      const last = points - 1
+      if (single) {
+        return {
+          kind: "single",
+          symbol: "SPY",
+          train_start: "2026-01-15",
+          split: time[86],
+          test_end: time[last],
+          index,
+          time,
+          price,
+          return_pct: returnPct,
+          exposure_pct: 35,
+          last_bar: {
+            time: time[last],
+            price: price[last],
+            return_pct: returnPct[last]
+          }
+        }
+      }
+
+      return {
+        kind: "pair",
+        train_start: "2026-01-02",
+        split: time[92],
+        test_end: time[last],
+        index,
+        time,
+        zscore,
+        spread,
+        priceX,
+        priceY,
+        x_label: "MSFT",
+        y_label: "AAPL",
+        alpha: 3.2185,
+        beta: 0.6342,
+        sigma: 0.38,
+        last_bar: {
+          time: time[last],
+          zscore: zscore[last],
+          spread: spread[last],
+          priceX: priceX[last],
+          priceY: priceY[last]
+        }
+      }
+    }
+
+    async function loadJson(path) {
+      const res = await fetch(API_BASE + path, { cache: "no-store" })
+      const data = await res.json()
+      if (!res.ok || data.error || data.ok === false) {
+        throw new Error(data.error || "Request failed")
+      }
+      return data
+    }
+
+    function PairList({ pairs, selected, onSelect, onRefresh, loading }) {
+      return h("aside", { className: "sidebar" },
+        h("div", { className: "brand" },
+          h("span", { className: "brand-mark" }, "R"),
+          h("div", null,
+            h("h1", null, "React Monitor"),
+            h("p", null, "component demo")
+          )
+        ),
+        h("div", { className: "sidebar-actions" },
+          h("button", { type: "button", onClick: onRefresh, disabled: loading }, loading ? "Refreshing" : "Refresh"),
+          h("span", null, `${pairs.length} symbols`)
+        ),
+        h("div", { className: "pair-list" },
+          pairs.map(item =>
+            h("button", {
+              key: item.name,
+              type: "button",
+              className: `pair-button ${selected === item.name ? "active" : ""}`,
+              onClick: () => onSelect(item.name)
+            },
+              h("span", null, displayName(item)),
+              h("small", null, item.kind || "pair")
+            )
+          )
+        )
+      )
+    }
+
+    function Metric({ label, value, tone }) {
+      return h("article", { className: "metric" },
+        h("span", null, label),
+        h("strong", { className: tone || "" }, value)
+      )
+    }
+
+    function Chart({ data, isSingle }) {
+      useEffect(() => {
+        if (!data || !data.index) return
+        const x = data.index
+        const y = isSingle ? (data.price || []) : (data.zscore || [])
+        const time = data.time || []
+        const returns = data.return_pct || []
+        Plotly.newPlot("reactChart", [{
+          x,
+          y,
+          type: "scatter",
+          mode: "lines",
+          line: { color: isSingle ? "#22c55e" : "#38bdf8", width: 2.5 },
+          customdata: x.map((_, index) => [time[index], returns[index]]),
+          hovertemplate: isSingle
+            ? "Time: %{customdata[0]}<br>Price: %{y:.2f}<br>Return: %{customdata[1]:.2f}%<extra></extra>"
+            : "Bar: %{x}<br>Z-score: %{y:.3f}<extra></extra>"
+        }], {
+          margin: { l: 56, r: 18, t: 10, b: 42 },
+          paper_bgcolor: "#10141d",
+          plot_bgcolor: "#10141d",
+          font: { color: "#d8dee9" },
+          xaxis: { gridcolor: "#252c3a", zeroline: false },
+          yaxis: { title: isSingle ? "Price" : "Z-score", gridcolor: "#252c3a", zerolinecolor: "#394152" }
+        }, {
+          responsive: true,
+          displayModeBar: false
+        })
+      }, [data, isSingle])
+
+      return h("div", { id: "reactChart" })
+    }
+
+    function App() {
+      const [pairs, setPairs] = useState([])
+      const [selected, setSelected] = useState("")
+      const [payload, setPayload] = useState({})
+      const [status, setStatus] = useState("Ready")
+      const [loading, setLoading] = useState(false)
+
+      const selectedMeta = useMemo(
+        () => pairs.find(item => item.name === selected) || {},
+        [pairs, selected]
+      )
+      const isSingle = payload.kind === "single" || selectedMeta.kind === "single"
+      const last = payload.last_bar || {}
+      const tone = isSingle
+        ? (Number(last.return_pct) >= 0 ? "good" : "danger")
+        : (Math.abs(Number(last.zscore)) < 1.9 ? "warn" : "danger")
+
+      async function refreshPairs(force) {
+        setLoading(true)
+        try {
+          const data = await loadJson(force ? "/api/pairs/refresh" : "/api/pairs")
+          const items = data.items || (data.pairs || []).map(name => ({ name, kind: "pair" }))
+          if (!items.length) throw new Error("API returned no pairs")
+          setPairs(items)
+          const next = selected || items[0].name
+          setSelected(next)
+          await loadPair(next, items.find(item => item.name === next))
+          setStatus(force ? "Pairs refreshed" : "API connected")
+        } catch (err) {
+          const demoPairs = [
+            { name: "aapl_msft", kind: "pair", source: "DEMO" },
+            { name: "spy", kind: "single", source: "DEMO" }
+          ]
+          const next = selected || demoPairs[0].name
+          setPairs(demoPairs)
+          setSelected(next)
+          setPayload(demoPayload(next))
+          setStatus(`Demo mode: ${err.message}`)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      async function loadPair(name, meta) {
+        try {
+          const data = await loadJson(`/api/${encodeURIComponent(name)}`)
+          setPayload(data)
+          setStatus("Updated " + new Date().toLocaleTimeString())
+        } catch (err) {
+          setPayload(demoPayload(name))
+          setStatus(`Demo mode: ${err.message}`)
+        }
+      }
+
+      useEffect(() => {
+        refreshPairs(false)
+      }, [])
+
+      return h("div", { id: "app" },
+        h(PairList, {
+          pairs,
+          selected,
+          loading,
+          onRefresh: () => refreshPairs(true),
+          onSelect: name => {
+            setSelected(name)
+            loadPair(name)
+          }
+        }),
+        h("main", { className: "content" },
+          h("header", { className: "topbar" },
+            h("div", null,
+              h("p", { className: "eyebrow" }, "React Operations"),
+              h("h2", null, selected ? selected.toUpperCase().replaceAll("_", " / ") : "No symbol selected")
+            ),
+            h("div", { className: "status-pill" }, status)
+          ),
+          h("section", { className: "metrics" },
+            h(Metric, { label: isSingle ? "Stock" : "Beta", value: isSingle ? (payload.symbol || selected || "-").toUpperCase() : formatNumber(payload.beta, 4) }),
+            h(Metric, { label: isSingle ? "Return" : "Z-score", value: isSingle ? formatPercent(last.return_pct) : formatNumber(last.zscore, 3), tone }),
+            h(Metric, { label: isSingle ? "Price" : "Spread", value: isSingle ? formatNumber(last.price, 2) : formatNumber(last.spread, 3) }),
+            h(Metric, { label: "Time", value: last.time ? String(last.time).slice(11, 16) : "-" })
+          ),
+          h("section", { className: "workspace" },
+            h("div", { className: "panel chart-panel" },
+              h("div", { className: "panel-header" },
+                h("div", null,
+                  h("h3", null, isSingle ? "Price Curve" : "Z-score Curve"),
+                  h("p", null, `${payload.train_start || "-"} to ${payload.test_end || "-"}`)
+                ),
+                h("button", { type: "button", onClick: () => loadPair(selected) }, "Reload")
+              ),
+              h(Chart, { data: payload, isSingle })
+            ),
+            h("div", { className: "panel details-panel" },
+              h("div", { className: "panel-header compact" }, h("h3", null, "React Notes")),
+              h("dl", null,
+                h("div", null, h("dt", null, "Framework"), h("dd", null, "React 18")),
+                h("div", null, h("dt", null, "State"), h("dd", null, "useState")),
+                h("div", null, h("dt", null, "Lifecycle"), h("dd", null, "useEffect")),
+                h("div", null, h("dt", null, "API"), h("dd", null, "/api/pairs")),
+                h("div", null, h("dt", null, "Chart"), h("dd", null, "Plotly"))
+              )
+            )
+          )
+        )
+      )
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(h(App))
+  </script>
+</body>
+</html>

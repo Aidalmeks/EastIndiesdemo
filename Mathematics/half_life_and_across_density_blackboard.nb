@@ -1,0 +1,81 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* CreatedBy='Wolfram 15.0' *)
+
+Notebook[{
+Cell[CellGroupData[{
+Cell["Rolling half-life：从 lambda 开始", "Title"],
+Cell["只讲一个问题：spread 偏离平衡后，模型认为它会怎样回来？", "Subtitle"],
+
+Cell[CellGroupData[{
+Cell["1. 先写 halfLife[lambda]", "Section"],
+Cell["half-life 的 2 来自定义：偏离何时从 D 变为 D/2。", "Text"],
+Cell["decayTime[lambda_, fraction_] := Log[fraction]/Log[1 + lambda];\nhalfLifeExact[lambda_] := decayTime[lambda, 1/2];\nhalfLifeApprox[lambda_] := -Log[2]/lambda;\n{halfLifeExact[-.1], halfLifeApprox[-.1]}", "Input"],
+Cell["把 fraction 改为 1/3，得到的是衰减到三分之一所需的时间；不能只把分子中的 Log[2] 改成其他数。", "Text"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["2. ΔS[t] 与平衡位置", "Section"],
+Cell["生产环境中 spread 可以一直大于 0；关键是它相对局部平衡位置 mu 的偏离。", "Text"],
+Cell["spread[t_] := y[t] - beta x[t];\ndeltaS[t_] := spread[t] - spread[t - 1];\nd[t_] := spread[t] - mu;\noneStepDirection[t_] := deltaS[t]/d[t - 1]", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["3. lambda 的正负", "Section"],
+Cell["偏离与下一步变化反向时是拉回；同向时是继续远离。", "Text"],
+Cell["deltaS[t] == lambda d[t - 1];\n(* lambda < 0: d 与 deltaS 反号，均值回复 *)\n(* lambda > 0: d 与 deltaS 同号，继续远离 *)", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["4. 带截距回归与局部 mu", "Section"],
+Cell["截距让平衡位置不必为零；生产 spread 即使始终大于 0，也能回复到正的 mu。", "Text"],
+Cell["deltaS[t] == a + lambda spread[t - 1] + error[t];\nmu == -a/lambda;\ndeltaS[t] == lambda (spread[t - 1] - mu) + error[t]", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["5. rolling lambda 的本质", "Section"],
+Cell["每个窗口得到的是带截距简单线性回归的最小二乘斜率估计量，也称回归系数。协方差是分子、方差是分母。", "Text"],
+Cell["lambdaHat[lagged_, delta_] := Covariance[lagged, delta]/Variance[lagged];\nhalfLife[lambda_] := If[-1 < lambda < 0, Log[1/2]/Log[1 + lambda], Missing[\"NotMeanReverting\"]]", "Input"],
+Cell["若窗口回归估计到 lambda >= 0 或 lambda <= -1，half-life 应留空；它不是 one-step lambda 的累计和。", "Text"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["6. 一个周期的正弦实验", "Section"],
+Cell["只取一个完整周期。转折点的变化近 0；平衡穿越点的偏离近 0，所以单点方向比值在这些位置不宜直接使用。", "Text"],
+Cell["d[theta_] := amplitude Sin[theta];\ninstantaneousLambda[theta_] := D[d[theta], theta]/d[theta] // FullSimplify", "Input"],
+Cell["此交互式未预先运行；需要时请手动执行下面的 Input 单元。", "Text"],
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXOneCycleHalfLifeDemo[]", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["6.1 警告：正弦的 OLS half-life 不是物理衰减", "Section"],
+Cell["OLS 是一维直线对散点的最佳平方误差投影。它可以为正弦给出负 lambda，但正弦永远振荡，真实动力学还需要速度／上一期状态。", "Text"],
+Cell["d[t_] := amplitude Sin[omega t];\nd[t + 1] == 2 Cos[omega] d[t] - d[t - 1];\nlambdaHat == Cos[omega] - 1", "Input"],
+Cell["正弦的 half-life 只能理解为 AR(1) 线性代理时间尺度，不能当作正弦周期或真实衰减时间。", "Text"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["6.2 同一个 OLS：二维投影与三维生成曲线", "Section"],
+Cell["先读 t-x 正弦与 t-y 差分近似余弦；三维图将它们组合为 (t,x,y)。左上 x-y 图才是回归真正使用的二维投影；透明平面沿 t 延伸，说明模型没有使用相位。", "Text"],
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXOLSGeometryDemo[]", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["7. lambda hat 的五步拆解", "Section"],
+Cell["默认 S(x) = mean + A Sin[x] 使用 101 个连续点、索引 0 到 100。完整窗口下 yesterday spread 是 0 到 99，today change 是 1 到 100。此交互式未预先运行。", "Text"],
+Cell["第 1 步：x 与 y。第 2 步：两列减均值。第 3 步：中心化散点。第 4 步：cross。第 5 步：不断加入样本、每次重新做带截距 OLS，直至完整窗口的 lambda hat。", "Text"],
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXLambdaHatFiveSteps[]", "Input"]
+}, Open]],
+
+Cell[CellGroupData[{
+Cell["8. 同一条 phi(t)=t^3 正弦：等时间与等相位采样", "Section"],
+Cell["phi(t)=t^3 使相位速度 phi'(t)=3t^2 增长，周期越来越短。本节同时画同一条曲线的等时间采样（模拟 K 线 bars）与每周期等相位点采样（受控对照）；只保留 -1 < lambda instant < 0 的单步收缩波段，不使用 rolling window、continuous rate 或 half-life。此交互式未预先运行。", "Text"],
+Cell["phi[t_] := t^3;\nphaseSpeed[t_] := D[phi[t], t];\ninstantLambda[phi0_, dphi_] := (Sin[phi0 + dphi] - Sin[phi0])/Sin[phi0] // TrigExpand", "Input"],
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"AACENXDailyMovingAverageLab.wl\"}]];\nAACENXSlowingSineLambdaDemo[]", "Input"]
+}, Open]]
+}, Open]]
+},
+WindowTitle -> "Rolling half-life：从 lambda 开始",
+StyleDefinitions -> "Default.nb"
+]

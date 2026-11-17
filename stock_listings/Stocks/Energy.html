@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Energy 行业分析</title>
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial;
+    margin: 40px;
+    background-color: #f8f9fa;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+h1 { border-bottom: 2px solid #333; }
+
+.back {
+    margin-bottom: 20px;
+    display: inline-block;
+    cursor: pointer;
+    color: blue;
+}
+
+.en {
+    color: #666;
+    font-size: 14px;
+    margin-left: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="back" onclick="goBack()">← 返回 GICS</div>
+
+<h1>能源（Energy）</h1>
+
+<div class="card">
+
+    <h2>101010 能源设备与服务 <span class="en">Energy Equipment & Services</span></h2>
+    <ul>
+        <li>10101010 石油与天然气钻井 <span class="en">Oil & Gas Drilling</span></li>
+        <li>10101020 石油与天然气设备与服务 <span class="en">Oil & Gas Equipment & Services</span></li>
+    </ul>
+
+</div>
+
+<div class="card">
+
+    <h2>101020 石油、天然气与消耗燃料 <span class="en">Oil, Gas & Consumable Fuels</span></h2>
+    <ul>
+        <li>10102010 综合石油天然气公司 <span class="en">Integrated Oil & Gas</span></li>
+        <li>10102020 勘探与生产 <span class="en">Exploration & Production</span></li>
+        <li>10102030 炼油与营销 <span class="en">Refining & Marketing</span></li>
+        <li>10102040 储存与运输 <span class="en">Storage & Transportation</span></li>
+        <li>10102050 煤炭与消耗燃料 <span class="en">Coal & Consumable Fuels</span></li>
+    </ul>
+
+</div>
+
+<script>
+function goBack() {
+    window.location.href = "GICS.html";
+}
+</script>
+
+</body>
+</html>

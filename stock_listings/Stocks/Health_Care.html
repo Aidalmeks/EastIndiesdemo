@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Health Care 行业分析</title>
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial;
+    margin: 40px;
+    background-color: #f8f9fa;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+h1 { border-bottom: 2px solid #333; }
+
+.back {
+    margin-bottom: 20px;
+    display: inline-block;
+    cursor: pointer;
+    color: blue;
+}
+
+.en {
+    color: #666;
+    font-size: 14px;
+    margin-left: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="back" onclick="goBack()">← 返回 GICS</div>
+
+<h1>医疗保健（Health Care）</h1>
+
+<!-- 3510 -->
+<div class="card">
+<h2>3510 医疗设备与服务 <span class="en">Health Care Equipment & Services</span></h2>
+
+<ul>
+<li><b>351010 医疗设备与用品</b> <span class="en">Health Care Equipment & Supplies</span>
+    <ul>
+        <li>35101010 医疗设备 <span class="en">Health Care Equipment</span></li>
+        <li>35101020 医疗用品 <span class="en">Health Care Supplies</span></li>
+    </ul>
+</li>
+
+<li><b>351020 医疗服务与提供商</b> <span class="en">Health Care Providers & Services</span>
+    <ul>
+        <li>35102010 医疗分销 <span class="en">Health Care Distributors</span></li>
+        <li>35102015 医疗服务 <span class="en">Health Care Services</span></li>
+        <li>35102020 医疗机构 <span class="en">Health Care Facilities</span></li>
+        <li>35102030 医疗管理 <span class="en">Managed Health Care</span></li>
+    </ul>
+</li>
+
+<li><b>351030 医疗技术</b> <span class="en">Health Care Technology</span>
+    <ul>
+        <li>35103010 医疗技术 <span class="en">Health Care Technology</span></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<!-- 3520 -->
+<div class="card">
+<h2>3520 制药、生物科技与生命科学 <span class="en">Pharmaceuticals, Biotechnology & Life Sciences</span></h2>
+
+<ul>
+<li><b>352010 生物科技</b> <span class="en">Biotechnology</span>
+    <ul>
+        <li>35201010 生物科技 <span class="en">Biotechnology</span></li>
+    </ul>
+</li>
+
+<li><b>352020 制药</b> <span class="en">Pharmaceuticals</span>
+    <ul>
+        <li>35202010 制药 <span class="en">Pharmaceuticals</span></li>
+    </ul>
+</li>
+
+<li><b>352030 生命科学工具与服务</b> <span class="en">Life Sciences Tools & Services</span>
+    <ul>
+        <li>35203010 生命科学工具与服务 <span class="en">Life Sciences Tools & Services</span></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+<script>
+function goBack() {
+    window.location.href = "GICS.html";
+}
+</script>
+
+</body>
+</html>

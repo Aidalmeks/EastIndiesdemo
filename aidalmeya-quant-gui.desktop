@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Aidalmeya Quant GUI
+Comment=Aidalmeya Quant service dashboard
+Exec=/var/www/html/finance/quant/bin/python /var/www/html/finance/quant_gui.py
+Path=/var/www/html/finance
+Icon=/var/www/html/finance/bank.ico
+Terminal=false
+Categories=Finance;Office;
+StartupNotify=true
+StartupWMClass=aidalmeya-quant-gui

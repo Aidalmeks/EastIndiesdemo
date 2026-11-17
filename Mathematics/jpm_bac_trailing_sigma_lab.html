@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>打开 JPM/BAC ±2σ 实验</title>
+  <style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#07101b;color:#e8eef8;font:16px system-ui,"Noto Sans CJK SC",sans-serif}.box{max-width:540px;padding:30px;border:1px solid #29415c;border-radius:14px;background:#0d1928}a{color:#67dbac}p{line-height:1.6;color:#b5c4d6}</style>
+</head>
+<body><main class="box">
+  <h1>正在打开 JPM / BAC 实验…</h1>
+  <p>这个入口会交给本机网站服务读取共同日线，然后在浏览器中计算无未来函数的 trailing mean 与 sigma。</p>
+  <p><a id="open" href="jpm_bac_trailing_sigma_lab.php">若没有自动跳转，请点击这里。</a></p>
+</main>
+<script>
+  const target = 'jpm_bac_trailing_sigma_lab.php';
+  const url = location.protocol === 'file:'
+    ? 'http://localhost/finance/Mathematics/' + target
+    : target;
+  document.querySelector('#open').href = url;
+  location.replace(url);
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+(*** Wolfram Notebook File ***)
+(* CreatedBy='Wolfram 15.0' *)
+Notebook[{
+Cell["时间序列检验：从问题走到 ADF、协整与 ECM", "Title"],
+Cell["教学黑板：先观察一种失败，再提出可检验的猜想。", "Subtitle"],
+Cell[CellGroupData[{
+Cell["0. 一张地图：不要把缩写当成模型清单", "Section"],
+Cell["BG、DW、NW、FGLS 首先围绕回归误差 u[t] 的相关结构；DF/ADF 首先问一个水平序列是否有单位根；AEG 问两个各自会漂移的序列，其长期回归残差是否平稳；ECM 描述偏离长期关系后的短期调整。它们不是同一个问题的六种名字。", "Text"],
+Cell["Grid[{{\"问题\", \"对象\", \"工具\", \"下一步\"}, {\"残差有记忆？\", \"u[t]\", \"DW / BG\", \"改均值方程或稳健推断\"}, {\"推断是否过度自信？\", \"Cov[u]\", \"NW(HAC) / FGLS\", \"报告假设与敏感性\"}, {\"水平有锚点？\", \"y[t]\", \"DF / ADF\", \"差分或协整分析\"}, {\"共同漂移仍有约束？\", \"长期残差\", \"AEG\", \"ECM\"}}, Frame -> All, Background -> {None, {Lighter[Blue, .85], None}}]", "Input"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["1. 起点：OLS 的残差应该像白噪声吗？", "Section"],
+Cell["从 y[t] = a + b x[t] + u[t] 开始。若 u[t] = rho u[t-1] + e[t]，今天的误差仍含有昨天的消息。OLS 系数不一定立刻失去意义，但独立误差公式算出来的标准误可能太小。", "Text"],
+Cell["SeedRandom[27]; n = 160; x = Accumulate[RandomVariate[NormalDistribution[0, 1], n]]/5; e = RandomVariate[NormalDistribution[0, 1], n]; u = FoldList[#2 + .72 #1 &, First[e], Rest[e]]; y = 1 + .8 x + u; fit = LinearModelFit[Transpose[{x, y}], z, z]; resid = y - fit[\"PredictedResponse\"]; ListLinePlot[resid, Frame -> True, FrameLabel -> {\"t\", \"OLS residual\"}, PlotRange -> All, ImageSize -> 850, PlotLabel -> \"带记忆的残差：肉眼只是线索，不是检验\"]", "Input"],
+Cell["猜想：残差不独立。DW 是一阶相关的快速指示，参照点约为 2；BG（Breusch-Godfrey）则在辅助回归中加入 u[t-1] 到 u[t-p]，检验它们是否共同无用。DW 在含滞后因变量等场景不够可靠，因此 BG 更通用。小 p 值是反对“无相关”的证据，不是模型完全报废。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["2. 发现残差相关后：三个不同的回答", "Section"],
+Cell["(1) 先问是否漏掉动力学、季节性或机制变量；检验不能代替均值方程。 (2) Newey-West / HAC：保留 OLS 系数，用允许异方差与自相关的协方差矩阵重算标准误。 (3) FGLS：指定并估计误差协方差结构，再做广义最小二乘。NW 是稳健推断；FGLS 是更强、也更有效率但更容易设错的结构假设。", "Text"],
+Cell["Column[{Style[\"NW/HAC：系数不变，标准误变。\", Bold], Style[\"FGLS：系数与标准误都可变，前提是误差模型近似正确。\", Bold], \"因此不能把 NW 当成一种序列相关检验，也不能把 FGLS 当成无条件更好的 NW。\"}]", "Input"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["3. 更深的猜想：水平序列没有锚点？——DF 与 ADF", "Section"],
+Cell["AR(1) 写作 y[t] = rho y[t-1] + epsilon[t]。移项得到 Delta y[t] = gamma y[t-1] + epsilon[t]，其中 gamma = rho-1。DF 的原假设是 gamma=0，即 rho=1：冲击永久留在水平上。ADF 再加入 Delta y 的滞后项，目的是让最终误差更像白噪声，而不是机械地制造小 p 值。", "Text"],
+Cell["Manipulate[Module[{eps, z}, eps = RandomVariate[NormalDistribution[0, 1], steps]; z = FoldList[#2 + rho #1 &, 0., eps]; ListLinePlot[z, Frame -> True, FrameLabel -> {\"t\", \"level\"}, PlotRange -> All, ImageSize -> 850, PlotLabel -> Row[{\"AR(1): rho = \", rho, If[rho == 1, \" (unit-root boundary)\", \"\"]}]]], {{rho, .8, \"rho\"}, .4, 1.1, .01, Appearance -> \"Labeled\"}, {{steps, 140, \"steps\"}, 40, 300, 1, Appearance -> \"Labeled\"}]", "Input"],
+Cell["ADF 的小 p 值表示有证据拒绝单位根；大 p 值只表示在当前样本、趋势设定和滞后选择下证据不足。截距、趋势和最大滞后都应有研究设计上的理由。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["4. 两条随机游走一起走，是否就有关系？——AEG", "Section"],
+Cell["不一定。两个独立随机游走的水平回归也可能有高 R^2 与漂亮 t 值：这叫伪回归。AEG（Augmented Engle-Granger）提出两步：先拟合 y[t]=a+b x[t]+u[t]，再检验估计残差 uhat[t] 是否平稳。只有残差有锚点，才可称 y 与 x 协整。由于残差来自第一步估计，最终应使用协整检验的专用临界值/p 值，而不能偷换成普通 ADF 的解释。", "Text"],
+Cell["SeedRandom[8]; n2 = 220; common = Accumulate[RandomVariate[NormalDistribution[0, 1], n2]]; xx = common + RandomVariate[NormalDistribution[0, .7], n2]; yy = 2 + 1.3 common + RandomVariate[NormalDistribution[0, .7], n2]; lr = LinearModelFit[Transpose[{xx, yy}], z, z]; err = yy - lr[\"PredictedResponse\"]; ListLinePlot[{xx, yy/1.3, err}, Frame -> True, PlotRange -> All, ImageSize -> 850, PlotLegends -> {\"x level\", \"scaled y level\", \"long-run residual\"}, PlotLabel -> \"协整的直觉：水平可漂移，偏离不能无限漂移\"]", "Input"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["5. 协整之后才问：偏离怎样回来？——ECM", "Section"],
+Cell["ECM（误差修正模型）把短期变化与长期偏离放在同一句： Delta y[t] = a + theta (y[t-1]-beta x[t-1]) + psi Delta x[t] + e[t]。括号是上一期误差修正项 ECT；theta<0 表示 y 高于长期关系时，下一期 Delta y 倾向向下。它不是 ADF 的替代品，而是在长期关系有意义的前提下，回答调整速度。", "Text"],
+Cell["Manipulate[Module[{path}, path = NestList[(1 + theta) # &, start, steps]; ListLinePlot[path, Frame -> True, FrameLabel -> {\"adjustment step\", \"ECT\"}, PlotRange -> All, ImageSize -> 850, PlotLabel -> Row[{\"Error correction: theta = \", theta, \"; stable pull-back requires -2 < theta < 0\"}]]], {{theta, -.28, \"theta\"}, -1.2, .3, .01, Appearance -> \"Labeled\"}, {{start, 3., \"initial deviation\"}, -5., 5., .1, Appearance -> \"Labeled\"}, {{steps, 35, \"steps\"}, 5, 100, 1, Appearance -> \"Labeled\"}]", "Input"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["6. Pair 筛选：ADF 不是交易价值分数", "Section"],
+Cell["对 pair 拟合 hedge ratio 后，spread 可写作 S[t] = Y[t] - (alpha + beta X[t])。若 S[t]-mu = rho (S[t-1]-mu) + epsilon[t]，则 ADF 在差分形式中检验 Delta S[t] = gamma (S[t-1]-mu) + epsilon[t]，gamma = rho-1。它问的是能否拒绝单位根；|ADF| 是这项证据的强度，不是 alpha、预期收益或 entry 的频率。", "Text"],
+Cell["“ADF 很高，却紧贴 spread mean”并不矛盾。ADF 对尺度不敏感：把 spread 整体缩小，单位根结论不会因此改变，但可交易的绝对振幅会变小。一个序列也可具有强回归力，却绝大多数时间留在均值附近，只有少数时刻偏离。它统计上平稳，却缺少足够的入场机会。", "Text"],
+Cell["暴力枚举时应拆开记录四件事：(1) 回归资格：ADF 或协整 p-value；(2) 回归速度：rho 或 gamma。若 0<rho<1，half-life = Log[1/2]/Log[rho]；(3) 可交易振幅：spread sigma 相对于价格、bid-ask、佣金、冲击与借券成本，亦即 2-sigma return；(4) 触发频率：z[t]=(S[t]-mu)/sigma，统计 |z|>=1 与 |z|>=2 的次数、持续时间及样本外表现。", "Text"],
+Cell["因此让 ADF 做第一阶段的资格门槛，而不是按 |ADF| 排名；第二阶段按 2-sigma return、z-score tail count、half-life、净收益、流动性和成本排序。要区分“有桩但绳子太短”的 pair，和“振幅足够却没有稳定回归”的 pair。", "Text"],
+Cell["结论：ADF 告诉你“绳子有没有系在桩上”；振幅、尾部频率和成本告诉你“这根绳子能不能交易”。", "Text"]
+}, Open]]
+}, WindowTitle -> "时间序列检验：从问题走到 ADF、协整与 ECM", StyleDefinitions -> "Default.nb"]

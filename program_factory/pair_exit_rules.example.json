@@ -1,0 +1,14 @@
+{
+  "stop_loss": {
+    "EXAMPLE_A_EXAMPLE_B": "trailing(-1*sigma)"
+  },
+  "take_profit": {
+    "EXAMPLE_A_EXAMPLE_B": "z(0)"
+  },
+  "single_stop_loss": {
+    "EXAMPLE": "trailing(-5)"
+  },
+  "single_take_profit": {
+    "EXAMPLE": "NY(15:55)"
+  }
+}

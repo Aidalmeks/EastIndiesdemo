@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>美股证券名录 · Quant Registry</title>
+  <link rel="stylesheet" href="listings.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="美股证券名录首页">
+      <span class="brand-mark">Q</span>
+      <span><b>Quant Registry</b><small>US MARKET DIRECTORY</small></span>
+    </a>
+    <nav>
+      <a class="nav-active" href="index.html">证券名录</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow"><span></span> US MARKET LIQUIDITY SNAPSHOT</div>
+      <div class="hero-copy">
+        <div>
+          <h1>一眼看清<br><em>美国市场。</em></h1>
+          <p>汇总 NASDAQ 与其他交易所证券清单，叠加 TradingView 一个月成交额，并与你的 <code>quant_data.us_info</code> 注册库对照。</p>
+        </div>
+        <div class="source-stamp">
+          <span>成交额统计月份</span>
+          <strong id="sourceTime">—</strong>
+          <small>TradingView · 1 Month Turnover · USD</small>
+        </div>
+      </div>
+      <div class="metrics" aria-label="市场统计">
+        <article><span>全部证券</span><strong id="metricListed">—</strong><small>不含测试证券</small></article>
+        <article><span>可交易标的</span><strong id="metricEligible">—</strong><small>已排除 <b id="metricExcluded">—</b> 个不适用标的</small></article>
+        <article class="metric-accent"><span>已注册</span><strong id="metricRegistered">—</strong><small><i></i><b id="metricActive">—</b> 个当前启用</small></article>
+      </div>
+    </section>
+
+    <section class="directory">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">01 / LIQUIDITY DIRECTORY</span>
+          <h2>一个月成交额名录</h2>
+        </div>
+        <p>仅包含有月成交额且可交易的证券；已排除 Cboe BZX 杠杆 ETF。默认按一个月成交额排列。</p>
+      </div>
+
+      <div class="toolbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+          <input id="searchInput" type="search" placeholder="只搜索证券代码，例如 BHP…" autocomplete="off">
+          <kbd>⌘ K</kbd>
+        </label>
+        <div class="selects">
+          <label><span>交易所</span><select id="exchangeFilter"><option value="all">全部交易所</option></select></label>
+          <label><span>证券类型</span><select id="typeFilter"><option value="all">全部类型</option></select></label>
+          <label><span>排序</span><select id="sortSelect">
+            <option value="turnover_desc">成交额：高到低</option>
+            <option value="turnover_asc">成交额：低到高</option>
+            <option value="change_desc">涨跌幅：高到低</option>
+            <option value="symbol_asc">代码：A 到 Z</option>
+          </select></label>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="segments" id="sourceSegments">
+          <button class="active" data-value="all">全部</button>
+          <button data-value="NASDAQ">NASDAQ</button>
+          <button data-value="OTHER">其他市场</button>
+        </div>
+        <div class="segments register-segments" id="registerSegments">
+          <button class="active" data-value="all">全部状态</button>
+          <button data-value="yes"><span class="dot"></span>已注册</button>
+          <button data-value="active">已启用</button>
+          <button data-value="no">未注册</button>
+        </div>
+      </div>
+
+      <div class="table-shell" aria-live="polite">
+        <div class="loading" id="loadingState"><span></span><p>正在整理市场名录…</p></div>
+        <div class="error-state" id="errorState" hidden>
+          <strong>暂时无法读取名录</strong><p id="errorText"></p><button id="retryButton">重新加载</button>
+        </div>
+        <table id="listingsTable" hidden>
+          <thead>
+            <tr>
+              <th><button class="rank-toggle" id="rankFocusToggle" type="button" title="切换突出显示的排名">排名 · <span id="rankFocusLabel">基准大</span> ⇄</button></th><th>证券</th><th>公司 / 基金名称</th><th>市场</th><th>类型</th><th>价格 / 日涨跌</th><th>一个月成交额</th><th>注册状态</th><th><span class="sr-only">操作</span></th>
+            </tr>
+          </thead>
+          <tbody id="listingsBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" hidden><span>∅</span><strong>没有符合条件的证券</strong><p>试试清除部分筛选条件。</p></div>
+      </div>
+
+      <footer class="pagination">
+        <p>显示 <b id="rangeStart">0</b>–<b id="rangeEnd">0</b>，共 <b id="resultTotal">0</b> 条</p>
+        <div>
+          <button id="prevPage" aria-label="上一页">←</button>
+          <span id="pageButtons"></span>
+          <button id="nextPage" aria-label="下一页">→</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <dialog id="detailDialog">
+    <button class="dialog-close" id="dialogClose" aria-label="关闭">×</button>
+    <div id="dialogContent"></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="data.js"></script>
+  <script src="listings.js" defer></script>
+</body>
+</html>

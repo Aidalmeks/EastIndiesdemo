@@ -1,0 +1,53 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+(*** Wolfram Notebook File ***)
+(* CreatedBy='Wolfram 15.0' *)
+Notebook[{
+Cell[CellGroupData[{
+Cell["Models for the Unpredictable：AR(1) 到 ARMA(1,1)", "Title"],
+Cell["教学黑板：手动改变系数、初始状态与脉冲，观察模型自己会如何预测。", "Subtitle"],
+Cell[CellGroupData[{
+Cell["0. 名称、时间与规则", "Section"],
+Cell["AR = AutoRegressive（自回归）；MA = Moving Average（移动平均，不是滚动均线）；ARMA = AutoRegressive Moving Average（自回归移动平均）。本黑板使用离散时刻 t=1,2,...；除指定脉冲外，未来 epsilon[t] 都为 0。", "Text"],
+Cell["n = 40;\nepsilon[t_, pulseTime_, pulseSize_] := If[t == pulseTime, pulseSize, 0];", "Input"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["1. AR(1)：phi 的两种 regime", "Section"],
+Cell["统一模型是 X[t] = phi X[t-1] + epsilon[t]。下面仍然是两张独立图：第一张只允许 0<phi<1，第二张只允许 phi>1；两张图共享一个可调的初始值 X[1]。", "Text"],
+Cell["Column[{\n Manipulate[\n  Module[{x}, x = ConstantArray[0., n]; x[[1]] = x1; Do[x[[t]] = phi x[[t - 1]], {t, 2, n}];\n   ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[.1, .65, 1], Thick], ImageSize -> 900, PlotLabel -> Row[{\"AR(1), 0 < phi < 1: phi = \", phi, \", X[1] = \", x1}]]],\n  {{phi, .82, \"phi (decay regime)\"}, .02, .98, .01, Appearance -> \"Labeled\"},\n  {{x1, 1., \"observed X[1]\"}, -3., 3., .05, Appearance -> \"Labeled\"}],\n Manipulate[\n  Module[{x}, x = ConstantArray[0., n]; x[[1]] = x1g; Do[x[[t]] = phig x[[t - 1]], {t, 2, n}];\n   ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[1, .35, .2], Thick], ImageSize -> 900, PlotLabel -> Row[{\"AR(1), phi > 1: phi = \", phig, \", X[1] = \", x1g}]]],\n  {{phig, 1.08, \"phi (growth regime)\"}, 1.01, 1.30, .01, Appearance -> \"Labeled\"},\n  {{x1g, 1., \"observed X[1]\"}, -1., 1., .05, Appearance -> \"Labeled\"}]\n }]", "Input"],
+Cell["严格对应的生活启发：固定 Delta t 的牛顿冷却给出 phi=Exp[-k Delta t]，所以 0<phi<1；phi>1 则是无容量约束人口增长的局部模型。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["3. AR(2)：两个独立初值", "Section"],
+Cell["X[t] = phi1 X[t-1] + phi2 X[t-2] + epsilon[t]。X[1] 与 X[2] 是独立已观测值；从 X[3] 才递推。", "Text"],
+Cell["Manipulate[\n Module[{x}, x = ConstantArray[0., n]; x[[1]] = x1; x[[2]] = x2; Do[x[[t]] = phi1 x[[t - 1]] + phi2 x[[t - 2]], {t, 3, n}];\n  ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[.7, .25, 1], Thick], ImageSize -> 900, PlotLabel -> Row[{\"AR(2): phi1 = \", phi1, \", phi2 = \", phi2}]]],\n {{phi1, 1.25, \"phi1\"}, -1.5, 1.5, .01, Appearance -> \"Labeled\"}, {{phi2, -.50, \"phi2\"}, -1.5, 1.5, .01, Appearance -> \"Labeled\"}, Delimiter, {{x1, 1., \"observed X[1]\"}, -3., 3., .05, Appearance -> \"Labeled\"}, {{x2, .35, \"observed X[2]\"}, -3., 3., .05, Appearance -> \"Labeled\"}]", "Input"],
+Cell["生活启发：上一期惯性与更早状态的反向拉力，可以成为振动或回摆的低阶离散近似。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["3.1 AR(2) 的特殊例子：斐波那契数列", "Subsection"],
+Cell["斐波那契数列满足 F[t] = F[t-1] + F[t-2]。因此它是一个确定性的 AR(2)：c=0，phi1=1，phi2=1，epsilon[t]=0；F[1] 与 F[2] 是两个独立给定的初值。", "Text"],
+Cell["Manipulate[\n Module[{x}, x = ConstantArray[0., steps]; x[[1]] = x1; x[[2]] = x2; Do[x[[t]] = phi1 x[[t - 1]] + phi2 x[[t - 2]], {t, 3, steps}];\n  ListLinePlot[Transpose[{Range[steps], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"F[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[.95, .55, .1], Thick], ImageSize -> 900, PlotLabel -> Row[{\"deterministic AR(2): phi1 = \", phi1, \", phi2 = \", phi2}]]],\n {{phi1, 1., \"phi1\"}, 0., 2., .05, Appearance -> \"Labeled\"}, {{phi2, 1., \"phi2\"}, 0., 2., .05, Appearance -> \"Labeled\"}, Delimiter, {{x1, 1., \"independent X[1]\"}, -.5, 2., .05, Appearance -> \"Labeled\"}, {{x2, 1., \"independent X[2]\"}, -.5, 2., .05, Appearance -> \"Labeled\"}, {{steps, 16, \"steps\"}, 5, 40, 1, Appearance -> \"Labeled\"}]", "Input"],
+Cell["当 phi1=phi2=1 且 X[1]=X[2]=1 时，图像就是 1,1,2,3,5,... 的斐波那契数列。两个正系数代表两个过去状态同方向推动当前状态。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["4. MA(1)：t=10 的脉冲，一步余波", "Section"],
+Cell["X[t] = epsilon[t] + theta epsilon[t-1]。epsilon 是脉冲，不是状态；只在指定时刻到来。这里只画 X[t]。", "Text"],
+Cell["Manipulate[\n Module[{eps, x}, eps = epsilon[#, pulseTime, pulseSize] & /@ Range[n]; x = Table[eps[[t]] + If[t >= 2, theta eps[[t - 1]], 0], {t, n}];\n  ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[.1, .75, .5], Thick], ImageSize -> 900, PlotLabel -> Row[{\"MA(1): theta = \", theta, \", pulse epsilon[\", pulseTime, \"] = \", pulseSize}]]],\n {{theta, .75, \"theta\"}, -1.5, 1.5, .05, Appearance -> \"Labeled\"}, {{pulseSize, 1., \"pulse size\"}, -3., 3., .05, Appearance -> \"Labeled\"}, {{pulseTime, 10, \"pulse time\"}, 3, 30, 1, Appearance -> \"Labeled\"}]", "Input"],
+Cell["生活启发：一次新闻、测量误差或延迟会影响当期，并以 theta 倍影响下一期；之后该脉冲不再直接进入 MA(1)。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["5. MA(2)：t=10 的脉冲，两步余波", "Section"],
+Cell["X[t] = epsilon[t] + theta1 epsilon[t-1] + theta2 epsilon[t-2]。这里只画 X[t]。", "Text"],
+Cell["Manipulate[\n Module[{eps, x}, eps = epsilon[#, pulseTime, pulseSize] & /@ Range[n]; x = Table[eps[[t]] + If[t >= 2, theta1 eps[[t - 1]], 0] + If[t >= 3, theta2 eps[[t - 2]], 0], {t, n}];\n  ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotRange -> All, PlotStyle -> Directive[RGBColor[.1, .75, .5], Thick], ImageSize -> 900, PlotLabel -> Row[{\"MA(2): theta1 = \", theta1, \", theta2 = \", theta2, \", pulse epsilon[\", pulseTime, \"] = \", pulseSize}]]],\n {{theta1, .75, \"theta1\"}, -1.5, 1.5, .05, Appearance -> \"Labeled\"}, {{theta2, .35, \"theta2\"}, -1.5, 1.5, .05, Appearance -> \"Labeled\"}, {{pulseSize, 1., \"pulse size\"}, -3., 3., .05, Appearance -> \"Labeled\"}, {{pulseTime, 10, \"pulse time\"}, 3, 30, 1, Appearance -> \"Labeled\"}]", "Input"],
+Cell["生活启发：一次冲击在两个后续结算、交付或库存节点留下有限余波；两步之后不再直接进入公式。", "Text"]
+}, Open]],
+Cell[CellGroupData[{
+Cell["6. 为什么 0 < phi < 1 会遗忘中途脉冲？", "Section"],
+Cell["若时刻 q 收到 epsilon[q]=A，未来残余为 A、phi A、phi^2 A、...；第 k 步后是 phi^k A。只要 |phi|<1，phi^k 趋近 0；phi 越接近 1，遗忘越慢。", "Text"],
+Cell["Manipulate[\n Module[{eps, x}, eps = epsilon[#, pulseTime, pulseSize] & /@ Range[n]; x = ConstantArray[0., n]; x[[1]] = eps[[1]]; Do[x[[t]] = phi x[[t - 1]] + eps[[t]], {t, 2, n}];\n  ListLinePlot[Transpose[{Range[n], x}], PlotMarkers -> Automatic, PlotRange -> All, Frame -> True, FrameLabel -> {\"t\", \"X[t]\"}, PlotStyle -> Directive[RGBColor[.15, .7, 1], Thick], ImageSize -> 900, PlotLabel -> Row[{\"AR(1) with impulse: phi = \", phi, \", epsilon[\", pulseTime, \"] = \", pulseSize}]]],\n {{phi, .82, \"phi\"}, .02, .98, .01, Appearance -> \"Labeled\"}, {{pulseSize, 1., \"pulse size\"}, -3., 3., .05, Appearance -> \"Labeled\"}, {{pulseTime, 10, \"pulse time\"}, 3, 30, 1, Appearance -> \"Labeled\"}]", "Input"],
+Cell["严格的一致性只针对这里的水平递推 D[t+1] = phi D[t]：固定 Delta t 的牛顿冷却恰好给出常数 phi=Exp[-k Delta t]。", "Text"]
+}, Open]]
+}, Open]]
+},
+WindowTitle -> "Models for the Unpredictable：AR(1) 到 ARMA(1,1) 教学黑板",
+StyleDefinitions -> "Default.nb"
+]

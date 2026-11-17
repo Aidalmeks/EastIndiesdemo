@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Materials 行业分析</title>
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial;
+    margin: 40px;
+    background-color: #f8f9fa;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+h1 { border-bottom: 2px solid #333; }
+
+.back {
+    margin-bottom: 20px;
+    display: inline-block;
+    cursor: pointer;
+    color: blue;
+}
+
+.en {
+    color: #666;
+    font-size: 14px;
+    margin-left: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="back" onclick="goBack()">← 返回 GICS</div>
+
+<h1>原材料（Materials）</h1>
+
+<!-- Chemicals -->
+<div class="card">
+    <h2>151010 化学品 <span class="en">Chemicals</span></h2>
+    <ul>
+        <li>15101010 大宗化学品 <span class="en">Commodity Chemicals</span></li>
+        <li>15101020 多元化化学品 <span class="en">Diversified Chemicals</span></li>
+        <li>15101030 化肥与农业化学品 <span class="en">Fertilizers & Agricultural Chemicals</span></li>
+        <li>15101040 工业气体 <span class="en">Industrial Gases</span></li>
+        <li>15101050 特种化学品 <span class="en">Specialty Chemicals</span></li>
+    </ul>
+</div>
+
+<!-- Construction Materials -->
+<div class="card">
+    <h2>151020 建筑材料 <span class="en">Construction Materials</span></h2>
+    <ul>
+        <li>15102010 建筑材料 <span class="en">Construction Materials</span></li>
+    </ul>
+</div>
+
+<!-- Containers & Packaging -->
+<div class="card">
+    <h2>151030 容器与包装 <span class="en">Containers & Packaging</span></h2>
+    <ul>
+        <li>15103010 金属、玻璃与塑料容器 <span class="en">Metal, Glass & Plastic Containers</span></li>
+        <li>15103020 纸与塑料包装制品 <span class="en">Paper & Plastic Packaging Products & Materials</span></li>
+    </ul>
+</div>
+
+<!-- Metals & Mining -->
+<div class="card">
+    <h2>151040 金属与采矿 <span class="en">Metals & Mining</span></h2>
+    <ul>
+        <li>15104010 铝 <span class="en">Aluminum</span></li>
+        <li>15104020 多元金属与采矿 <span class="en">Diversified Metals & Mining</span></li>
+        <li>15104025 铜 <span class="en">Copper</span></li>
+        <li>15104030 黄金 <span class="en">Gold</span></li>
+        <li>15104040 贵金属与矿物 <span class="en">Precious Metals & Minerals</span></li>
+        <li>15104045 白银 <span class="en">Silver</span></li>
+        <li>15104050 钢铁 <span class="en">Steel</span></li>
+    </ul>
+</div>
+
+<!-- Paper & Forest -->
+<div class="card">
+    <h2>151050 纸与林业产品 <span class="en">Paper & Forest Products</span></h2>
+    <ul>
+        <li>15105010 林业产品 <span class="en">Forest Products</span></li>
+        <li>15105020 纸制品 <span class="en">Paper Products</span></li>
+    </ul>
+</div>
+
+<script>
+function goBack() {
+    window.location.href = "GICS.html";
+}
+</script>
+
+</body>
+</html>

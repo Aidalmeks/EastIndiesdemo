@@ -1,0 +1,9 @@
+Notebook[{
+Cell["Trading batteries · Fixed-beta blackboard", "Title"],
+Cell["顺序执行下方两格。黑板从 metapairs 读取 pair，并支持共同日线与共同 5 分钟价格。它始终使用原始 price：fixed beta spread、causal rolling z-score、κ̂ 和 Equity 均不做首日归一化；图表不使用装饰性背景填充。", "Text"],
+Cell["Get[FileNameJoin[{NotebookDirectory[], \"trading_batteries_selecting_blackboard.wl\"}]];", "Input"],
+Cell["TBBoard[]", "Input"]
+},
+WindowSize->{1100, 900},
+StyleDefinitions->"Default.nb"
+]

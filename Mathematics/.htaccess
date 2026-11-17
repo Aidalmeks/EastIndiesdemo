@@ -1,0 +1,5 @@
+# The parent finance directory is intentionally private.  Expose only this
+# browser lab and keep notebooks, Wolfram source, and other local files denied.
+<FilesMatch "^jpm_bac_trailing_sigma_lab\.(html|php)$">
+    Require all granted
+</FilesMatch>
